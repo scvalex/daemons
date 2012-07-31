@@ -29,17 +29,20 @@ instance Serialize Result
 
 type Book = M.Map B.ByteString B.ByteString
 
+executeCommand :: MVar Book -> Command -> IO Result
+executeCommand bookVar comm = modifyMVar bookVar $ \book -> return $
+    case comm of
+      MemoGet key -> ( book
+                     , maybe (MemoFailed "not found")
+                             MemoValue
+                             (M.lookup key book) )
+      MemoPut key value -> ( M.insert key value book
+                           , MemoValue "ok" )
+
 commandExecuter :: MVar Book -> Pipe Command Result IO ()
 commandExecuter bookVar = forever $ do
     c <- await
-    yield =<< (lift $ modifyMVar bookVar $ \book -> return $
-                   case c of
-                     MemoGet key -> ( book
-                                    , maybe (MemoFailed "not found")
-                                            MemoValue
-                                            (M.lookup key book) )
-                     MemoPut key value -> ( M.insert key value book
-                                          , MemoValue "ok" ) )
+    yield =<< lift (executeCommand bookVar c)
 
 memoGenerator :: Int -> Producer Command IO ()
 memoGenerator n = replicateM_ n $ do
