@@ -41,8 +41,8 @@ executeCommand bookVar comm = modifyMVar bookVar $ \book -> return $
 
 commandExecuter :: MVar Book -> Pipe Command Result IO ()
 commandExecuter bookVar = forever $ do
-    c <- await
-    yield =<< lift (executeCommand bookVar c)
+    comm <- await
+    yield =<< lift (executeCommand bookVar comm)
 
 memoGenerator :: Int -> Producer Command IO ()
 memoGenerator n = replicateM_ n $ do
