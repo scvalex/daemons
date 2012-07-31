@@ -12,6 +12,7 @@ for an example.
 See also
 --------
 
- - `pipes` - (The Pipes Tutorial)[http://hackage.haskell.org/packages/archive/pipes/latest/doc/html/Control-Pipe-Tutorial.html]
+ - `pipes` [The Pipes Tutorial](http://hackage.haskell.org/packages/archive/pipes/latest/doc/html/Control-Pipe-Tutorial.html).
+  Note that we use the `pipes-core` package, and not `pipes`; the tutorial is the same for both.
 
- - `C3` - (Wikipedia)[https://en.wikipedia.org/wiki/Command,_control,_and_communications#Command.2C_control_and_communications]
+ - `C3` [Wikipedia](https://en.wikipedia.org/wiki/Command,_control,_and_communications#Command.2C_control_and_communications)
