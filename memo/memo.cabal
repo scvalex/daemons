@@ -1,0 +1,31 @@
+Name:           memo
+Version:        0.1.0
+Cabal-Version:  >= 1.8
+License:        GPL-3
+License-File:   LICENSE
+Stability:      experimental
+Author:         Alexandru Scvortov <scvalex@gmail.com>
+Maintainer:     scvalex@gmail.com
+Homepage:       https://github.com/scvalex/pipes-c3
+Category:       Text
+Synopsis:       Simple key-value store daemon using pipes-c3
+Build-Type:     Simple
+Description:
+        This package provides a simple, in-memory, key-value store
+        daemon and client.  It serves as the example and tutorial for
+        /pipes-c3/.
+        .
+        See the README.md file for details.
+
+Extra-Source-Files:     Makefile
+
+Data-Files:             README.md, NEWS.md, LICENSE
+
+Source-repository head
+  Type:                 git
+  Location:             git://github.com/scvalex/pipes-c3.git
+
+Executable memo
+  Build-depends:        base >= 4 && < 5, containers, cereal
+  Main-Is:              Main.hs
+  Ghc-options:           -Wall
