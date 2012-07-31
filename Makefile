@@ -17,7 +17,7 @@ test: build
 clean:
 	cabal clean
 
-dist/setup-config: memo.cabal
+dist/setup-config: pipes-c3.cabal
 	cabal configure --enable-tests
 
 doc: build

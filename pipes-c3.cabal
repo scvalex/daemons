@@ -8,13 +8,9 @@ Author:         Alexandru Scvortov <scvalex@gmail.com>
 Maintainer:     scvalex@gmail.com
 Homepage:       https://github.com/scvalex/pipes-c3
 Category:       Text
-Synopsis:       Simple key-value store daemon using pipes-c3
+Synopsis:       Library to easily control daemonized programs
 Build-Type:     Simple
 Description:
-        This package provides a simple, in-memory, key-value store
-        daemon and client.  It serves as the example and tutorial for
-        /pipes-c3/.
-        .
         See the README.md file for details.
 
 Extra-Source-Files:     Makefile
@@ -25,9 +21,16 @@ Source-repository head
   Type:                 git
   Location:             git://github.com/scvalex/pipes-c3.git
 
+Library
+  Build-depends:        base >= 4 && < 5, bytestring, cereal,
+                        pipes-core
+  Ghc-options:          -Wall
+  Exposed-modules:      Control.Pipe.Serialize
+  Other-modules:
+
 Executable memo
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
                         containers, ghc-prim, pipes-core, pipes-extra,
                         random, transformers
-  Main-Is:              Main.hs
-  Ghc-options:           -Wall
+  Main-Is:              Memo.hs
+  Ghc-options:          -Wall
