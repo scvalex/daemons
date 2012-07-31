@@ -11,6 +11,9 @@ Category:       Text
 Synopsis:       Library to easily control daemonized programs
 Build-Type:     Simple
 Description:
+        "Control.Pipe.Serialize" provides serialization and
+        incremental deserialization pipes.
+        .
         See the README.md file for details.
 
 Extra-Source-Files:     Makefile
