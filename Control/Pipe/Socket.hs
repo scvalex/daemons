@@ -16,8 +16,7 @@ import qualified Control.Exception as CE
 import Control.Monad ( forever, unless )
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Control.Monad.Trans.Class ( lift )
-import Control.Pipe ( Pipe, Consumer, Producer
-                    , await, yield, runPipe, (<+<) )
+import Control.Pipe ( Consumer, Producer, await, yield )
 import Data.ByteString.Char8 ( ByteString )
 import qualified Data.ByteString.Char8 as B
 import Network.Socket ( Socket )
@@ -38,11 +37,26 @@ socketWriter socket = forever $ do
     bin <- await
     lift . liftIO $ sendAll socket bin
 
--- | A simple handler: takes an incoming stream of 'ByteString's and
--- ouputs a stream of 'ByteString's.  Since 'ByteString's are fairly
--- boring by themseleves, have a look at "Control.Pipe.Serialize"
--- which lets you deserialize/serialize pipes of 'ByteString's easily.
-type Handler = Pipe ByteString ByteString IO ()
+-- | A simple handler: takes an incoming stream of 'ByteString's, an
+-- stream of 'ByteString's, and ties them together somehow.
+-- Conceptually, the simplest handler would be @identity@:
+--
+-- > import Control.Monad
+-- > import Control.Pipe
+-- > import Data.ByteString.Char8
+-- >
+-- > handler socketReader socketWriter = do
+-- >     let identity = forever $ do
+-- >         x <- await
+-- >         yield x
+-- >     runPipe (socketWriter socket <+< identity <+< socketReader socket)
+--
+-- See the @pipes@ tutorial for more examples of writing pipes.
+--
+-- Since 'ByteString's are fairly boring by themseleves, have a look
+-- at "Control.Pipe.Serialize" which lets you deserialize/serialize
+-- pipes of 'ByteString's easily.
+type Handler = Producer ByteString IO () -> Consumer ByteString IO () -> IO ()
 
 -- | Listen for connections on the given socket, and run 'Handler' on
 -- each received connection.  The socket should previously have been
@@ -54,9 +68,8 @@ runSocketServer lsocket handler = liftIO $
   where
     serve = forever $ do
         (socket, _addr) <- NS.accept lsocket
-        let pipeline = socketWriter socket <+< handler <+< socketReader socket
         _ <- forkIO $ CE.finally
-                          (runPipe pipeline)
+                          (handler (socketReader socket) (socketWriter socket))
                           (NS.sClose socket)
         return ()
 
@@ -64,5 +77,6 @@ runSocketServer lsocket handler = liftIO $
 -- the case of errors.
 runSocketClient :: (MonadIO m) => Socket -> Handler -> m ()
 runSocketClient socket handler = liftIO $ do
-    let pipeline = socketWriter socket <+< handler <+< socketReader socket
-    CE.finally (runPipe pipeline) (NS.sClose socket)
+    CE.finally
+        (handler (socketReader socket) (socketWriter socket))
+        (NS.sClose socket)
