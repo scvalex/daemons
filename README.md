@@ -22,6 +22,6 @@ Modules
 See also
 --------
 
- - `pipes` [The Pipes Tutorial](http://hackage.haskell.org/packages/archive/pipes-core/latest/doc/html/Control-Pipe.html)
+ - `pipes` [The Pipes Tutorial](http://hackage.haskell.org/packages/archive/pipes/latest/doc/html/Control-Pipe-Tutorial.html)
 
  - `C3` [Wikipedia](https://en.wikipedia.org/wiki/Command,_control,_and_communications#Command.2C_control_and_communications)
