@@ -4,129 +4,63 @@
 --   <a href="https://github.com/pcapriotti/pipes-network">pipes-network</a>
 
 module Control.Pipe.Socket (
-  Application,
-  socketReader,
-  socketWriter,
-  ServerSettings(..),
-  runTCPServer,
-  ClientSettings(..),
-  runTCPClient,
-  ) where
+        -- * Socket pipes
+        socketReader, socketWriter,
+
+        -- * Socket server/client
+        Handler, runSocketServer, runSocketClient
+    ) where
 
 import qualified Network.Socket as NS
 import Network.Socket ( Socket )
 import Network.Socket.ByteString ( sendAll, recv )
-import Data.ByteString.Char8 ( ByteString )
 import qualified Data.ByteString.Char8 as B
 import Control.Concurrent ( forkIO )
 import qualified Control.Exception as CE
 import Control.Monad ( forever, unless )
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
+import Control.Monad.IO.Class ( MonadIO(..) )
+import Control.Monad.Trans.Class ( lift )
 import Control.Pipe
 
 -- | Stream data from the socket.
-socketReader :: MonadIO m => Socket -> Pipe () ByteString m ()
-socketReader socket = go
-  where
-    go = do
-        bs <- lift . liftIO $ recv socket 4096
-        unless (B.null bs) $
-            yield bs >> go
+socketReader :: (MonadIO m) => Socket -> Producer B.ByteString m ()
+socketReader socket = do
+    bin <- lift . liftIO $ recv socket 4096
+    unless (B.null bin) $ do
+        yield bin
+        socketReader socket
 
 -- | Stream data to the socket.
-socketWriter :: MonadIO m => Socket -> Pipe ByteString Void m r
-socketWriter socket = forever $ await >>= lift . liftIO . sendAll socket
+socketWriter :: (MonadIO m) => Socket -> Consumer B.ByteString m r
+socketWriter socket = forever $ do
+    bin <- await
+    lift . liftIO $ sendAll socket bin
 
--- | A simple TCP application. It takes two arguments: the 'Producer'
--- to read input data from, and the 'Consumer' to send output data to.
-type Application m = Pipe () ByteString m ()
-                   -> Pipe ByteString Void m ()
-                   -> IO ()
+-- | A simple handler: takes an incoming stream of 'B.ByteString's and
+-- ouputs a stream of 'B.ByteString's.  Since 'B.ByteString's are
+-- fairly boring by themseleves, have a look at
+-- "Control.Pipe.Serialize" which lets you deserialize/serialize pipes
+-- of 'B.ByteString's easily.
+type Handler = Pipe B.ByteString B.ByteString IO ()
 
--- | Settings for a TCP server. It takes a port to listen on, and an
--- optional hostname to bind to.
-data ServerSettings = ServerSettings
-    { serverPort :: Int
-    , serverHost :: Maybe String -- ^ 'Nothing' indicates no preference
-    }
-
--- | Run an @Application@ with the given settings. This function will
--- create a new listening socket, accept connections on it, and spawn
--- a new thread for each connection.
-runTCPServer :: (MonadIO m) => ServerSettings -> Application m -> IO ()
-runTCPServer (ServerSettings port host) app = CE.bracket
-    (bindPort host port)
-    NS.sClose
-    (forever . serve)
+-- | Listen for connections on the given socket, and run 'Handler' on
+-- each received connection.  Each handler is run in its onw thread.
+-- The socket is closed, even in the case of errors.
+runSocketServer :: (MonadIO m) => Socket -> Handler -> m ()
+runSocketServer lsocket handler = liftIO $
+    CE.finally serve (NS.sClose lsocket)
   where
-    serve lsocket = do
+    serve = forever $ do
         (socket, _addr) <- NS.accept lsocket
-        _ <- forkIO $ do
-            CE.finally
-                (app (socketReader socket) (socketWriter socket))
-                (NS.sClose socket)
+        let pipeline = socketWriter socket <+< handler <+< socketReader socket
+        _ <- forkIO $ CE.finally
+                          (runPipe pipeline)
+                          (NS.sClose socket)
         return ()
 
--- | Settings for a TCP client, specifying how to connect to the
--- server.
-data ClientSettings = ClientSettings
-    { clientPort :: Int
-    , clientHost :: String
-    }
-
--- | Run an 'Application' by connecting to the specified server.
-runTCPClient :: MonadIO m => ClientSettings -> Application m -> IO ()
-runTCPClient (ClientSettings port host) app = CE.bracket
-    (getSocket host port)
-    NS.sClose
-    (\s -> app (socketReader s) (socketWriter s))
-
--- | Attempt to connect to the given host/port.
-getSocket :: String -> Int -> IO NS.Socket
-getSocket host' port' = do
-    let hints = NS.defaultHints
-                {NS.addrFlags = [NS.AI_ADDRCONFIG]
-                , NS.addrSocketType = NS.Stream
-                }
-    (addr:_) <- NS.getAddrInfo (Just hints) (Just host') (Just $ show port')
-    CE.bracketOnError
-        (NS.socket (NS.addrFamily addr)
-                   (NS.addrSocketType addr)
-                   (NS.addrProtocol addr))
-        NS.sClose
-            (\sock -> NS.connect sock (NS.addrAddress addr) >> return sock)
-
--- | Attempt to bind a listening @Socket@ on the given host/port. If no host is
--- given, will use the first address available.
-bindPort :: Maybe String -> Int -> IO Socket
-bindPort host p = do
-    let hints = NS.defaultHints
-            { NS.addrFlags =
-                  [ NS.AI_PASSIVE
-                  , NS.AI_NUMERICSERV
-                  , NS.AI_NUMERICHOST
-                  ]
-            , NS.addrSocketType = NS.Stream
-            }
-        port = Just . show $ p
-    addrs <- NS.getAddrInfo (Just hints) host port
-    let tryAddrs (addr1:rest@(_:_)) = CE.catch
-                                          (theBody addr1)
-                                          (\(_ :: CE.IOException) -> tryAddrs rest)
-        tryAddrs (addr1:[]) = theBody addr1
-        tryAddrs _          = error "bindPort: addrs is empty"
-        theBody addr =
-            CE.bracketOnError
-            (NS.socket
-                (NS.addrFamily addr)
-                (NS.addrSocketType addr)
-                (NS.addrProtocol addr))
-            NS.sClose
-            (\sock -> do
-                NS.setSocketOption sock NS.ReuseAddr 1
-                NS.bindSocket sock (NS.addrAddress addr)
-                NS.listen sock NS.maxListenQueue
-                return sock)
-    tryAddrs addrs
-
+-- | Run 'Handler' on the given socket.  The socket is closed, even in
+-- the case of errors.
+runSocketClient :: (MonadIO m) => Socket -> Handler -> m ()
+runSocketClient socket handler = liftIO $ do
+    let pipeline = socketWriter socket <+< handler <+< socketReader socket
+    CE.finally (runPipe pipeline) (NS.sClose socket)
