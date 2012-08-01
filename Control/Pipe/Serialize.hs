@@ -1,3 +1,21 @@
+-- | This module provides the 'deserializer' and 'serializer' pipes to
+-- convert 'B.ByteString's off of pipes into typed values.
+--
+-- In order to use it, the types of the values need to have
+-- 'Serialize' instances.  These can be derived automatically using
+-- "Ghc.Generics":
+--
+-- > {-# LANGUAGE DeriveGeneric #-}
+-- >
+-- > data Foo = Bar String | Baz Int
+-- >            deriving ( Generic )
+-- >
+-- > instance Serialize Foo
+--
+-- Note that in the above example: we use the @DeriveGeneric@
+-- extension, derive a @Generic@ instance for our data-type, and write
+-- an /empty/ @Serialize@ instance.
+--
 module Control.Pipe.Serialize (
         -- * Pipes
         serializer, deserializer
