@@ -4,16 +4,15 @@ module Main where
 
 import qualified Data.ByteString.Char8 as B
 import Data.Serialize ( Serialize )
-import Data.String
 import qualified Data.Map as M
+import Control.Concurrent ( forkIO )
 import Control.Concurrent.MVar
 import Control.Pipe
-import Control.Pipe.Binary
 import Control.Pipe.Serialize
+import Control.Pipe.Socket
 import Control.Monad
 import Control.Monad.Trans.Class
 import GHC.Generics
-import System.Random
 
 data Command = MemoGet B.ByteString
              | MemoPut B.ByteString B.ByteString
@@ -44,36 +43,14 @@ commandExecuter bookVar = forever $ do
     comm <- await
     yield =<< lift (executeCommand bookVar comm)
 
-memoGenerator :: Int -> Producer Command IO ()
-memoGenerator n = replicateM_ n $ do
-    m <- lift $ randomRIO (1 :: Int, 4)
-    b <- lift $ randomRIO (1 :: Int, 2)
-    yield (if b == 1 then MemoGet (fromString (show m))
-                     else MemoPut (fromString (show m)) "data")
-
-printer :: (Show a) => Consumer a IO ()
-printer = forever $ do
-    x <- await
-    lift $ print x
-
-testWrite :: Pipeline IO ()
-testWrite = fileWriter "commands.bin" <+< serializer <+< memoGenerator 10
-
-testRead :: Pipeline IO ()
-testRead = (printer :: Consumer Result IO ())
-         <+< deserializer
-         <+< fileReader "results.bin"
-
-test :: MVar Book -> Pipeline IO ()
-test bookVar = fileWriter "results.bin"
-             <+< serializer
-             <+< commandExecuter bookVar
-             <+< deserializer
-             <+< fileReader "commands.bin"
-
 main :: IO ()
 main = do
     bookVar <- newMVar M.empty
-    runPipe testWrite
-    runPipe (test bookVar)
-    runPipe testRead
+    let lsocket = undefined
+    _ <- forkIO $ runSocketServer lsocket $ \reader writer -> do
+           runPipe (writer <+< serializer
+                    <+< commandExecuter bookVar
+                    <+< deserializer <+< reader)
+    let socket = undefined
+    runSocketClient socket $ \_reader writer ->
+        runPipe (writer <+< serializer <+< (yield (MemoPut "name" "alex")))

@@ -45,11 +45,11 @@ socketWriter socket = forever $ do
 -- > import Control.Pipe
 -- > import Data.ByteString.Char8
 -- >
--- > handler socketReader socketWriter = do
+-- > handler reader writer = do
 -- >     let identity = forever $ do
 -- >         x <- await
 -- >         yield x
--- >     runPipe (socketWriter socket <+< identity <+< socketReader socket)
+-- >     runPipe (writer <+< identity <+< reader)
 --
 -- See the @pipes@ tutorial for more examples of writing pipes.
 --
