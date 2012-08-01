@@ -14,6 +14,9 @@ Description:
         "Control.Pipe.Serialize" provides serialization and
         incremental deserialization pipes.
         .
+        "Control.Pipe.Socket" provides functions to setup pipes around
+        sockets.
+        .
         See the README.md file for details.
 
 Extra-Source-Files:     Makefile

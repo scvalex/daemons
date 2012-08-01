@@ -16,6 +16,9 @@ Modules
    deserialize streams of strict `ByteString`s using
    [cereal](http://hackage.haskell.org/package/cereal).
 
+ - `Control.Pipe.Socket` provides functions to setup strict
+   `ByteString` pipes around sockets.
+
 See also
 --------
 
