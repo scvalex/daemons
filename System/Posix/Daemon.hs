@@ -25,11 +25,11 @@ import Filesystem.Path.CurrentOS ( FilePath, encodeString )
 --
 -- Note: All unnecessary fds should be close before calling this.
 -- Otherwise, you get an fd leak.
-startDaemon :: FilePath  -- ^ pidfile
-            -> IO ()     -- ^ program
+startDaemon :: Maybe FilePath  -- ^ pidfile
+            -> IO ()           -- ^ program
             -> IO ()
-startDaemon pidFile program = do
-    checkRunning
+startDaemon maybePidFile program = do
+    checkPidFile
     -- fork first child
     ignore $ forkProcess $ do
         -- create a new session and make this process its leader; see
@@ -40,7 +40,7 @@ startDaemon pidFile program = do
             -- remap standard fds
             remapFds
             -- lock file
-            setRunning
+            writePidFile
             -- run the daemon
             program
   where
@@ -51,18 +51,23 @@ startDaemon pidFile program = do
         mapM_ (dupTo devnull) [stdInput, stdOutput, stdError]
         closeFd devnull
 
-    checkRunning = do
-        fe <- doesFileExist (encodeString pidFile)
+    withPidFile act =
+        case maybePidFile of
+          Nothing      -> return ()
+          Just pidFile -> act (encodeString pidFile)
+
+    checkPidFile = withPidFile $ \pidFile -> do
+        fe <- doesFileExist pidFile
         when fe $ do
-            fd <- openFd (encodeString pidFile) WriteOnly Nothing defaultFileFlags
+            fd <- openFd pidFile WriteOnly Nothing defaultFileFlags
             ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
             closeFd fd
             case ml of
               Just (pid, _) -> fail (show pid ++ " already running")
               Nothing       -> return ()
 
-    setRunning = do
-        fd <- createFile (encodeString pidFile) 777
+    writePidFile = withPidFile $ \pidFile -> do
+        fd <- createFile pidFile 777
         setLock fd (WriteLock, AbsoluteSeek, 0, 0)
         pid <- getProcessID
         ignore $ fdWrite fd (show pid)
