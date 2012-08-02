@@ -1,9 +1,6 @@
--- | This module provides 'startDaemon' and 'stopDaemon' to facilitate
--- the creation of daemon programs.  Think @emacs --daemon@, or @adb@.
---
 module System.Posix.Daemon (
-        -- * Daemon control
-        startDaemon
+        -- * Daemons
+        runDetached
     ) where
 
 import Prelude hiding ( FilePath )
@@ -36,21 +33,23 @@ data Redirection = DevNull
 instance Default Redirection where
     def = DevNull
 
--- | Double-fork to create a well behaved daemon.  If @pidfile@ is
--- given, check/set pidfile; if we cannot obtain a lock on the file,
--- another process is already using it, so fail.  The @redirection@
--- parameter controls what to do with the standard channels (@stdin@,
--- @stderr@, and @stdout@).
+-- | Run the given action detached from the current terminal; this
+-- creates an entirely new process.  This function returns
+-- immediately.  Uses the double-fork technique to create a well
+-- behaved daemon.  If @pidfile@ is given, check/write it; if we
+-- cannot obtain a lock on the file, another process is already using
+-- it, so fail.  The @redirection@ parameter controls what to do with
+-- the standard channels (@stdin@, @stderr@, and @stdout@).
 --
 -- See: <http://www.enderunix.org/docs/eng/daemon.php>
 --
 -- Note: All unnecessary fds should be close before calling this.
 -- Otherwise, you get an fd leak.
-startDaemon :: Maybe FilePath  -- ^ pidfile
+runDetached :: Maybe FilePath  -- ^ pidfile
             -> Redirection     -- ^ redirection
             -> IO ()           -- ^ program
             -> IO ()
-startDaemon maybePidFile redirection program = do
+runDetached maybePidFile redirection program = do
     checkPidFile
     -- fork first child
     ignore $ forkProcess $ do
@@ -68,6 +67,8 @@ startDaemon maybePidFile redirection program = do
   where
     ignore act = act >> return ()
 
+    -- Remap the standard channels based on the @redirection@
+    -- parameter.
     remapFds = do
         let file = case redirection of
                      DevNull         -> "/dev/null"
@@ -76,11 +77,14 @@ startDaemon maybePidFile redirection program = do
         mapM_ (dupTo fd) [stdInput, stdOutput, stdError]
         closeFd fd
 
+    -- Convert the 'FilePath' @pidfile@ to a regular 'String' and run
+    -- the action with it.
     withPidFile act =
         case maybePidFile of
           Nothing      -> return ()
           Just pidFile -> act (encodeString pidFile)
 
+    -- Check if the pidfile exists, and fail if it does.
     checkPidFile = withPidFile $ \pidFile -> do
         fe <- doesFileExist pidFile
         when fe $ do
@@ -91,6 +95,7 @@ startDaemon maybePidFile redirection program = do
               Just (pid, _) -> fail (show pid ++ " already running")
               Nothing       -> return ()
 
+    -- Write the pidfile to disk.
     writePidFile = withPidFile $ \pidFile -> do
         fd <- createFile pidFile 777
         setLock fd (WriteLock, AbsoluteSeek, 0, 0)
