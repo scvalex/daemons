@@ -12,7 +12,7 @@ import System.Directory ( doesFileExist )
 import System.IO ( SeekMode(..) )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
-                       , LockRequest (..), createFile, setLock, fdWrite )
+                       , LockRequest (..), setLock, fdWrite )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 
 -- | Where should the output (and input) of a daemon be redirected to?
@@ -50,7 +50,9 @@ runDetached :: Maybe FilePath  -- ^ pidfile
             -> IO ()           -- ^ program
             -> IO ()
 runDetached maybePidFile redirection program = do
-    checkPidFile
+    -- check if the pidfile exists; fail if it does, and create it,
+    -- otherwise
+    checkWritePidFile
     -- fork first child
     ignore $ forkProcess $ do
         -- create a new session and make this process its leader; see
@@ -60,8 +62,6 @@ runDetached maybePidFile redirection program = do
         ignore $ forkProcess $ do
             -- remap standard fds
             remapFds
-            -- lock file
-            writePidFile
             -- run the daemon
             program
   where
@@ -84,20 +84,20 @@ runDetached maybePidFile redirection program = do
           Nothing      -> return ()
           Just pidFile -> act (encodeString pidFile)
 
-    -- Check if the pidfile exists, and fail if it does.
-    checkPidFile = withPidFile $ \pidFile -> do
+    -- Check if the pidfile exists; fail if it does, and create it, otherwise
+    checkWritePidFile = withPidFile $ \pidFile -> do
         fe <- doesFileExist pidFile
         when fe $ do
-            fd <- openFd pidFile WriteOnly Nothing defaultFileFlags
+            fd <- openFd pidFile WriteOnly (Just 777) defaultFileFlags
+            -- CR scvalex: We get the @ReadLock@, and set the
+            -- @WriteLock@.  Is this correct?
             ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
-            closeFd fd
             case ml of
-              Just (pid, _) -> fail (show pid ++ " already running")
-              Nothing       -> return ()
-
-    -- Write the pidfile to disk.
-    writePidFile = withPidFile $ \pidFile -> do
-        fd <- createFile pidFile 777
-        setLock fd (WriteLock, AbsoluteSeek, 0, 0)
-        pid <- getProcessID
-        ignore $ fdWrite fd (show pid)
+              Just (pid, _) -> do
+                  closeFd fd
+                  fail (show pid ++ " already running")
+              Nothing -> do
+                   setLock fd (WriteLock, AbsoluteSeek, 0, 0)
+                   pid <- getProcessID
+                   ignore $ fdWrite fd (show pid)
+                   closeFd fd
