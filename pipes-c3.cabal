@@ -42,3 +42,14 @@ Executable memo
                         network
   Main-Is:              Memo.hs
   Ghc-options:          -Wall
+
+Test-suite daemon
+  Hs-Source-Dirs:       Test, .
+  Main-Is:              Daemon.hs
+  Type:                 exitcode-stdio-1.0
+
+  Build-Depends:        base >= 4 && < 5, data-default, directory,
+                        system-filepath, unix
+  Ghc-Options:          -Wall
+
+  Build-Depends:        test-framework, test-framework-hunit, HUnit
