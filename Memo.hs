@@ -2,17 +2,18 @@
 
 module Main where
 
-import qualified Data.ByteString.Char8 as B
-import Data.Serialize ( Serialize )
-import qualified Data.Map as M
-import Control.Concurrent ( forkIO )
 import Control.Concurrent.MVar
 import Control.Pipe
 import Control.Pipe.Serialize
 import Control.Pipe.Socket
 import Control.Monad
 import Control.Monad.Trans.Class
+import qualified Data.ByteString.Char8 as B
+import Data.Default ( def )
+import Data.Serialize ( Serialize )
+import qualified Data.Map as M
 import GHC.Generics
+import System.Posix.Daemon
 
 data Command = MemoGet B.ByteString
              | MemoPut B.ByteString B.ByteString
@@ -47,7 +48,7 @@ main :: IO ()
 main = do
     bookVar <- newMVar M.empty
     let lsocket = undefined
-    _ <- forkIO $ runSocketServer lsocket $ \reader writer -> do
+    runDetached Nothing def $ runSocketServer lsocket $ \reader writer -> do
            runPipe (writer <+< serializer
                     <+< commandExecuter bookVar
                     <+< deserializer <+< reader)

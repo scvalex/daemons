@@ -38,8 +38,8 @@ Library
 
 Executable memo
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
-                        containers, ghc-prim, pipes, transformers,
-                        network
+                        containers, data-default, ghc-prim, pipes,
+                        transformers, network, system-filepath, unix
   Main-Is:              Memo.hs
   Ghc-options:          -Wall
 
