@@ -19,6 +19,7 @@ main = defaultMainWithOpts
        [ testCase "firstRun" testFirst
        , testCase "withPid" testWithPid
        , testCase "exclusion" testExclusion
+       , testCase "redirection" testRedirection
        ] mempty
 
 ensureRemoved :: [FilePath] -> IO ()
@@ -58,6 +59,15 @@ testExclusion = flip finally (ensureRemoved ["pid", "tmp"]) $ do
         handle (\(_ :: SomeException) -> writeFile "tmp" txtExp)
           (runDetached (Just "pid") def $ do
                writeFile "tmp" "failed")
+    sleep 500
+    txt <- readFile "tmp"
+    txt @?= txtExp
+
+testRedirection :: Assertion
+testRedirection = flip finally (ensureRemoved ["tmp"]) $ do
+    let txtExp = "ok"
+    runDetached Nothing (ToFile "tmp") $ do
+        putStr "ok"
     sleep 500
     txt <- readFile "tmp"
     txt @?= txtExp

@@ -1,13 +1,13 @@
 module System.Posix.Daemon (
         -- * Daemons
-        runDetached
+        Redirection(..), runDetached
     ) where
 
 import Prelude hiding ( FilePath )
 
 import Data.Default ( Default(..) )
 import Filesystem.Path.CurrentOS ( FilePath, encodeString )
-import System.IO ( SeekMode(..) )
+import System.IO ( SeekMode(..), hFlush, stdout )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
                        , LockRequest (..), setLock, fdWrite )
@@ -68,11 +68,16 @@ runDetached maybePidFile redirection program = do
     -- Remap the standard channels based on the @redirection@
     -- parameter.
     remapFds = do
+        devnull <- openFd "/dev/null" ReadOnly Nothing defaultFileFlags
+        ignore (dupTo devnull stdInput)
+        closeFd devnull
+
         let file = case redirection of
                      DevNull         -> "/dev/null"
                      ToFile filepath -> encodeString filepath
-        fd <- openFd file ReadOnly Nothing defaultFileFlags
-        mapM_ (dupTo fd) [stdInput, stdOutput, stdError]
+        fd <- openFd file ReadWrite (Just 770) defaultFileFlags
+        hFlush stdout
+        mapM_ (dupTo fd) [stdOutput, stdError]
         closeFd fd
 
     -- Convert the 'FilePath' @pidfile@ to a regular 'String' and run
