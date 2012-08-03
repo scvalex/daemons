@@ -32,7 +32,9 @@ Library
                         data-default, network, pipes,
                         system-filepath, transformers, unix
   Ghc-options:          -Wall -threaded
-  Exposed-modules:      Control.Pipe.Serialize, Control.Pipe.Socket,
+  Exposed-modules:      Control.Pipe.C3,
+                        Control.Pipe.Serialize,
+                        Control.Pipe.Socket,
                         System.Posix.Daemon
   Other-modules:
 
