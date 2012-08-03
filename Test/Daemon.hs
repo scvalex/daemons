@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Control.Concurrent
@@ -15,10 +17,11 @@ import Test.HUnit
 main :: IO ()
 main = defaultMainWithOpts
        [ testCase "firstRun" testFirst
+       , testCase "withPid" testWithPid
        ] mempty
 
-ensureRemoved :: FilePath -> IO ()
-ensureRemoved filepath = do
+ensureRemoved :: [FilePath] -> IO ()
+ensureRemoved filepaths = forM_ filepaths $ \filepath -> do
     exists <- doesFileExist filepath
     when exists $ do
         removeFile filepath
@@ -28,10 +31,21 @@ sleep :: Int -> IO ()
 sleep n = threadDelay (n * 1000)
 
 testFirst :: Assertion
-testFirst = flip finally (ensureRemoved "tmp") $ do
+testFirst = flip finally (ensureRemoved ["tmp"]) $ do
     let txtExp = "42"
     runDetached Nothing def $ do
         writeFile "tmp" txtExp
     sleep 500
     txt <- readFile "tmp"
     txt @?= txtExp
+
+testWithPid :: Assertion
+testWithPid = flip finally (ensureRemoved ["pid", "tmp"]) $ do
+    let txtExp = "42"
+    runDetached (Just "pid") def $ do
+        writeFile "tmp" txtExp
+    sleep 500
+    txt <- readFile "tmp"
+    txt @?= txtExp
+    pid <- readFile "pid"
+    null pid @?= False

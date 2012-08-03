@@ -5,10 +5,8 @@ module System.Posix.Daemon (
 
 import Prelude hiding ( FilePath )
 
-import Control.Monad ( when )
 import Data.Default ( Default(..) )
 import Filesystem.Path.CurrentOS ( FilePath, encodeString )
-import System.Directory ( doesFileExist )
 import System.IO ( SeekMode(..) )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
@@ -86,18 +84,16 @@ runDetached maybePidFile redirection program = do
 
     -- Check if the pidfile exists; fail if it does, and create it, otherwise
     checkWritePidFile = withPidFile $ \pidFile -> do
-        fe <- doesFileExist pidFile
-        when fe $ do
-            fd <- openFd pidFile WriteOnly (Just 777) defaultFileFlags
-            -- CR scvalex: We get the @ReadLock@, and set the
-            -- @WriteLock@.  Is this correct?
-            ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
-            case ml of
-              Just (pid, _) -> do
-                  closeFd fd
-                  fail (show pid ++ " already running")
-              Nothing -> do
-                   setLock fd (WriteLock, AbsoluteSeek, 0, 0)
-                   pid <- getProcessID
-                   ignore $ fdWrite fd (show pid)
-                   closeFd fd
+        fd <- openFd pidFile WriteOnly (Just 777) defaultFileFlags
+        -- CR scvalex: We get the @ReadLock@, and set the
+        -- @WriteLock@.  Is this correct?
+        ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
+        case ml of
+          Just (pid, _) -> do
+              closeFd fd
+              fail (show pid ++ " already running")
+          Nothing -> do
+              setLock fd (WriteLock, AbsoluteSeek, 0, 0)
+              pid <- getProcessID
+              ignore $ fdWrite fd (show pid)
+              closeFd fd
