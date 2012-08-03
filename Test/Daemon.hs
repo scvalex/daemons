@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Main where
 
@@ -18,6 +18,7 @@ main :: IO ()
 main = defaultMainWithOpts
        [ testCase "firstRun" testFirst
        , testCase "withPid" testWithPid
+       , testCase "exclusion" testExclusion
        ] mempty
 
 ensureRemoved :: [FilePath] -> IO ()
@@ -49,3 +50,14 @@ testWithPid = flip finally (ensureRemoved ["pid", "tmp"]) $ do
     txt @?= txtExp
     pid <- readFile "pid"
     null pid @?= False
+
+testExclusion :: Assertion
+testExclusion = flip finally (ensureRemoved ["pid", "tmp"]) $ do
+    let txtExp = "ok"
+    runDetached (Just "pid") def $ do
+        handle (\(_ :: SomeException) -> writeFile "tmp" txtExp)
+          (runDetached (Just "pid") def $ do
+               writeFile "tmp" "failed")
+    sleep 500
+    txt <- readFile "tmp"
+    txt @?= txtExp
