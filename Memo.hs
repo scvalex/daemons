@@ -2,6 +2,7 @@
 
 module Main where
 
+import Control.Concurrent ( threadDelay )
 import Control.Concurrent.MVar
 import qualified Control.Exception as CE
 import Control.Pipe.C3
@@ -80,6 +81,7 @@ runClient hostname port comm = do
 main :: IO ()
 main = do
     bookVar <- newMVar M.empty
-    startDaemon "localhost"  7856 (runMemoCommand bookVar)
-    res <- runClient "localhost"  7856 (MemoPut "name" "alex")
+    startDaemon "127.0.0.1"  7856 (runMemoCommand bookVar)
+    threadDelay 1000000
+    res <- runClient "127.0.0.1"  7856 (MemoPut "name" "alex")
     print (res :: Maybe Response)
