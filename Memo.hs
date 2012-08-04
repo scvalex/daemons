@@ -18,15 +18,15 @@ data Command = MemoGet B.ByteString
 
 instance Serialize Command
 
-data Result = MemoFailed String
-            | MemoValue B.ByteString
-              deriving ( Generic, Show )
+data Response = MemoFailed String
+              | MemoValue B.ByteString
+                deriving ( Generic, Show )
 
-instance Serialize Result
+instance Serialize Response
 
 type Book = M.Map B.ByteString B.ByteString
 
-executeCommand :: MVar Book -> Command -> IO Result
+executeCommand :: MVar Book -> Command -> IO Response
 executeCommand bookVar comm = modifyMVar bookVar $ \book -> return $
     case comm of
       MemoGet key -> ( book
@@ -44,4 +44,4 @@ main = do
         runSocketServer lsocket $ commandReceiver (executeCommand bookVar)
     let socket = undefined
     res <- runSocketClient socket $ commandSender (MemoPut "name" "alex")
-    print (res :: Maybe Result)
+    print (res :: Maybe Response)
