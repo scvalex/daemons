@@ -2,21 +2,13 @@
 
 module Main where
 
-import Control.Concurrent ( threadDelay )
 import Control.Concurrent.MVar
-import qualified Control.Exception as CE
-import Control.Monad ( when )
-import Control.Pipe.C3
-import Control.Pipe.Socket
 import qualified Data.ByteString.Char8 as B
-import Data.Default ( def )
 import Data.Serialize ( Serialize )
 import qualified Data.Map as M
 import GHC.Generics
 import qualified Network.Socket as NS
-import System.Directory ( getHomeDirectory, doesFileExist )
-import System.FilePath
-import System.Posix.Daemon
+import System.Daemon
 
 data Command = MemoGet B.ByteString
              | MemoPut B.ByteString B.ByteString
@@ -41,50 +33,6 @@ runMemoCommand bookVar comm = modifyMVar bookVar $ \book -> return $
                              (M.lookup key book) )
       MemoPut key value -> ( M.insert key value book
                            , MemoValue "ok" )
-
-bindPort :: Int -> IO NS.Socket
-bindPort port = do
-    CE.bracketOnError
-        (NS.socket NS.AF_INET NS.Stream NS.defaultProtocol)
-        NS.sClose
-        (\socket -> do
-            NS.setSocketOption socket NS.ReuseAddr 1
-            NS.bindSocket socket (NS.SockAddrInet (fromIntegral port)
-                                                  NS.iNADDR_ANY)
-            NS.listen socket NS.maxListenQueue
-            return socket)
-
-startDaemon :: (Serialize a, Serialize b) => String -> Int -> (a -> IO b) -> IO ()
-startDaemon name port executeCommand = do
-    home <- getHomeDirectory
-    let pidfile = home </> ("." ++ name) <.> "pid"
-    dfe <- doesFileExist pidfile
-    when (not dfe) $ do
-        runDetached (Just pidfile) def $ do
-            CE.bracket
-                (bindPort port)
-                NS.sClose
-                (\lsocket ->
-                     runSocketServer lsocket $ commandReceiver executeCommand)
-        threadDelay 1000000
-
-getSocket :: String -> Int -> IO NS.Socket
-getSocket hostname port = do
-    addrInfos <- NS.getAddrInfo Nothing (Just hostname) (Just $ show port)
-    CE.bracketOnError
-        (NS.socket NS.AF_INET NS.Stream NS.defaultProtocol)
-        NS.sClose
-        (\socket -> do
-             NS.connect socket (NS.addrAddress $ head addrInfos)
-             return socket)
-
-runClient :: (Serialize a, Serialize b) => String -> Int -> a -> IO (Maybe b)
-runClient hostname port comm = do
-    CE.bracket
-        (getSocket hostname port)
-        NS.sClose
-        (\socket ->
-             runSocketClient socket (commandSender comm))
 
 main :: IO ()
 main = NS.withSocketsDo $ do

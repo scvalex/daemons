@@ -35,6 +35,7 @@ Library
   Exposed-modules:      Control.Pipe.C3,
                         Control.Pipe.Serialize,
                         Control.Pipe.Socket,
+                        System.Daemon,
                         System.Posix.Daemon
   Other-modules:
 
