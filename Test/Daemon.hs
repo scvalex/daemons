@@ -9,6 +9,7 @@ import Data.Default
 import Data.Monoid
 import System.Directory
 import System.Posix.Daemon
+import System.Posix.Process ( getProcessID )
 
 import Test.Framework
 import Test.Framework.Providers.HUnit
@@ -45,7 +46,11 @@ testWithPid :: Assertion
 testWithPid = flip finally (ensureRemoved ["pid", "tmp"]) $ do
     let txtExp = "42"
     runDetached (Just "pid") def $ do
-        writeFile "tmp" txtExp
+        pid <- getProcessID
+        pid' <- readFile "pid"
+        if show pid == pid'
+          then writeFile "tmp" txtExp
+          else writeFile "tmp" "wrong pid recorded"
     sleep 500
     txt <- readFile "tmp"
     txt @?= txtExp
