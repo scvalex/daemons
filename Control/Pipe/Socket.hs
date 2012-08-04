@@ -63,22 +63,17 @@ type Handler r = Producer ByteString IO ()
 -- | Listen for connections on the given socket, and run 'Handler' on
 -- each received connection.  The socket should previously have been
 -- bound to a port or to a file.  Each handler is run in its own
--- thread.  The socket is closed, even in the case of errors.
+-- thread.  Even in case of an error, the handlers' sockets are
+-- closed.
 runSocketServer :: (MonadIO m) => Socket -> Handler () -> m ()
-runSocketServer lsocket handler = liftIO $
-    CE.finally serve (NS.sClose lsocket)
-  where
-    serve = forever $ do
-        (socket, _addr) <- NS.accept lsocket
-        _ <- forkIO $ CE.finally
-                          (handler (socketReader socket) (socketWriter socket))
-                          (NS.sClose socket)
-        return ()
+runSocketServer lsocket handler = liftIO $ forever $ do
+    (socket, _addr) <- NS.accept lsocket
+    _ <- forkIO $ CE.finally
+                      (handler (socketReader socket) (socketWriter socket))
+                      (NS.sClose socket)
+    return ()
 
--- | Run 'Handler' on the given socket.  The socket is closed, even in
--- the case of errors.
+-- | Run 'Handler' on the given socket.
 runSocketClient :: (MonadIO m) => Socket -> Handler r -> m r
 runSocketClient socket handler = liftIO $ do
-    CE.finally
-        (handler (socketReader socket) (socketWriter socket))
-        (NS.sClose socket)
+    handler (socketReader socket) (socketWriter socket)
