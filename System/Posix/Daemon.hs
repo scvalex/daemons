@@ -5,7 +5,9 @@ module System.Posix.Daemon (
 
 import Prelude hiding ( FilePath )
 
+import Control.Monad ( when )
 import Data.Default ( Default(..) )
+import System.Directory ( doesFileExist )
 import System.FilePath ( FilePath )
 import System.IO ( SeekMode(..), hFlush, stdout )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
@@ -48,9 +50,8 @@ runDetached :: Maybe FilePath  -- ^ pidfile
             -> IO ()           -- ^ program
             -> IO ()
 runDetached maybePidFile redirection program = do
-    -- check if the pidfile exists; fail if it does, and create it,
-    -- otherwise
-    checkWritePidFile
+    -- check if the pidfile exists; fail if it does
+    checkPidFile
     -- fork first child
     ignore $ forkProcess $ do
         -- create a new session and make this process its leader; see
@@ -58,6 +59,8 @@ runDetached maybePidFile redirection program = do
         ignore $ createSession
         -- fork second child
         ignore $ forkProcess $ do
+            -- create the pidfile
+            writePidFile
             -- remap standard fds
             remapFds
             -- run the daemon
@@ -88,17 +91,19 @@ runDetached maybePidFile redirection program = do
           Just pidFile -> act pidFile
 
     -- Check if the pidfile exists; fail if it does, and create it, otherwise
-    checkWritePidFile = withPidFile $ \pidFile -> do
+    checkPidFile = withPidFile $ \pidFile -> do
+        dfe <- doesFileExist pidFile
+        when dfe $ do
+            fd <- openFd pidFile WriteOnly Nothing defaultFileFlags
+            ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
+            closeFd fd
+            case ml of
+              Just (pid, _) -> fail (show pid ++ " already running")
+              Nothing       -> return ()
+
+    writePidFile = withPidFile $ \pidFile -> do
         fd <- openFd pidFile WriteOnly (Just 777) defaultFileFlags
-        -- CR scvalex: We get the @ReadLock@, and set the
-        -- @WriteLock@.  Is this correct?
-        ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
-        case ml of
-          Just (pid, _) -> do
-              closeFd fd
-              fail (show pid ++ " already running")
-          Nothing -> do
-              setLock fd (WriteLock, AbsoluteSeek, 0, 0)
-              pid <- getProcessID
-              ignore $ fdWrite fd (show pid)
-              closeFd fd
+        setLock fd (WriteLock, AbsoluteSeek, 0, 0)
+        pid <- getProcessID
+        ignore $ fdWrite fd (show pid)
+        closeFd fd

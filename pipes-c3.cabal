@@ -29,7 +29,7 @@ Source-repository head
 
 Library
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
-                        data-default, filepath, network, pipes,
+                        data-default, directory, filepath, network, pipes,
                         transformers, unix
   Ghc-options:          -Wall -threaded
   Exposed-modules:      Control.Pipe.C3,
