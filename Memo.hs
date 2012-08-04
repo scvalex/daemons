@@ -3,29 +3,29 @@
 module Main where
 
 import Control.Concurrent.MVar
-import qualified Data.ByteString.Char8 as B
+import Data.ByteString.Char8 ( ByteString )
 import Data.Char ( toLower )
 import Data.Serialize ( Serialize )
 import Data.String ( fromString )
 import qualified Data.Map as M
 import GHC.Generics
-import qualified Network.Socket as NS
+import Network.Socket ( withSocketsDo )
 import System.Environment ( getArgs )
 import System.Daemon
 
-data Command = MemoGet B.ByteString
-             | MemoPut B.ByteString B.ByteString
+data Command = MemoGet ByteString
+             | MemoPut ByteString ByteString
                deriving ( Generic, Show )
 
 instance Serialize Command
 
 data Response = MemoFailed String
-              | MemoValue B.ByteString
+              | MemoValue ByteString
                 deriving ( Generic, Show )
 
 instance Serialize Response
 
-type Book = M.Map B.ByteString B.ByteString
+type Book = M.Map ByteString ByteString
 
 runMemoCommand :: MVar Book -> Command -> IO Response
 runMemoCommand bookVar comm = modifyMVar bookVar $ \book -> return $
@@ -38,7 +38,7 @@ runMemoCommand bookVar comm = modifyMVar bookVar $ \book -> return $
                            , MemoValue "ok" )
 
 main :: IO ()
-main = NS.withSocketsDo $ do
+main = withSocketsDo $ do
     bookVar <- newMVar M.empty
     startDaemon "memo" 7856 (runMemoCommand bookVar)
 
