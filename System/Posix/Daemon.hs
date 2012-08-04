@@ -6,7 +6,7 @@ module System.Posix.Daemon (
 import Prelude hiding ( FilePath )
 
 import Data.Default ( Default(..) )
-import Filesystem.Path.CurrentOS ( FilePath, encodeString )
+import System.FilePath ( FilePath )
 import System.IO ( SeekMode(..), hFlush, stdout )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
@@ -74,7 +74,7 @@ runDetached maybePidFile redirection program = do
 
         let file = case redirection of
                      DevNull         -> "/dev/null"
-                     ToFile filepath -> encodeString filepath
+                     ToFile filepath -> filepath
         fd <- openFd file ReadWrite (Just 770) defaultFileFlags
         hFlush stdout
         mapM_ (dupTo fd) [stdOutput, stdError]
@@ -85,7 +85,7 @@ runDetached maybePidFile redirection program = do
     withPidFile act =
         case maybePidFile of
           Nothing      -> return ()
-          Just pidFile -> act (encodeString pidFile)
+          Just pidFile -> act pidFile
 
     -- Check if the pidfile exists; fail if it does, and create it, otherwise
     checkWritePidFile = withPidFile $ \pidFile -> do

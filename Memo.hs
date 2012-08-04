@@ -13,6 +13,8 @@ import Data.Serialize ( Serialize )
 import qualified Data.Map as M
 import GHC.Generics
 import qualified Network.Socket as NS
+import System.Directory ( getHomeDirectory )
+import System.FilePath
 import System.Posix.Daemon
 
 data Command = MemoGet B.ByteString
@@ -51,9 +53,10 @@ bindPort port = do
             NS.listen socket NS.maxListenQueue
             return socket)
 
-startDaemon :: (Serialize a, Serialize b) => Int -> (a -> IO b) -> IO ()
-startDaemon port executeCommand = do
-    runDetached Nothing def $ do
+startDaemon :: (Serialize a, Serialize b) => String -> Int -> (a -> IO b) -> IO ()
+startDaemon name port executeCommand = do
+    home <- getHomeDirectory
+    runDetached (Just (home </> ("." ++ name) <.> "pid")) def $ do
         CE.bracket
             (bindPort port)
             NS.sClose
@@ -81,7 +84,7 @@ runClient hostname port comm = do
 main :: IO ()
 main = NS.withSocketsDo $ do
     bookVar <- newMVar M.empty
-    startDaemon 7856 (runMemoCommand bookVar)
+    startDaemon "memo" 7856 (runMemoCommand bookVar)
     threadDelay 1000000
     res <- runClient "localhost"  7856 (MemoPut "name" "alex")
     print (res :: Maybe Response)
