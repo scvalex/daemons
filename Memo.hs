@@ -79,7 +79,7 @@ runClient hostname port comm = do
              runSocketClient socket (commandSender comm))
 
 main :: IO ()
-main = do
+main = NS.withSocketsDo $ do
     bookVar <- newMVar M.empty
     startDaemon 7856 (runMemoCommand bookVar)
     threadDelay 1000000
