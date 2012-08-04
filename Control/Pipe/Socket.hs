@@ -32,7 +32,7 @@ socketReader socket = do
         socketReader socket
 
 -- | Stream data to the socket.
-socketWriter :: (MonadIO m) => Socket -> Consumer ByteString m r
+socketWriter :: (MonadIO m) => Socket -> Consumer ByteString m ()
 socketWriter socket = forever $ do
     bin <- await
     lift . liftIO $ sendAll socket bin
@@ -56,13 +56,15 @@ socketWriter socket = forever $ do
 -- Since 'ByteString's are fairly boring by themseleves, have a look
 -- at "Control.Pipe.Serialize" which lets you deserialize/serialize
 -- pipes of 'ByteString's easily.
-type Handler = Producer ByteString IO () -> Consumer ByteString IO () -> IO ()
+type Handler r = Producer ByteString IO ()
+               -> Consumer ByteString IO ()
+               -> IO r
 
 -- | Listen for connections on the given socket, and run 'Handler' on
 -- each received connection.  The socket should previously have been
 -- bound to a port or to a file.  Each handler is run in its own
 -- thread.  The socket is closed, even in the case of errors.
-runSocketServer :: (MonadIO m) => Socket -> Handler -> m ()
+runSocketServer :: (MonadIO m) => Socket -> Handler () -> m ()
 runSocketServer lsocket handler = liftIO $
     CE.finally serve (NS.sClose lsocket)
   where
@@ -75,7 +77,7 @@ runSocketServer lsocket handler = liftIO $
 
 -- | Run 'Handler' on the given socket.  The socket is closed, even in
 -- the case of errors.
-runSocketClient :: (MonadIO m) => Socket -> Handler -> m ()
+runSocketClient :: (MonadIO m) => Socket -> Handler r -> m r
 runSocketClient socket handler = liftIO $ do
     CE.finally
         (handler (socketReader socket) (socketWriter socket))
