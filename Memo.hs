@@ -3,11 +3,8 @@
 module Main where
 
 import Control.Concurrent.MVar
-import Control.Pipe
-import Control.Pipe.Serialize
+import Control.Pipe.C3
 import Control.Pipe.Socket
-import Control.Monad
-import Control.Monad.Trans.Class
 import qualified Data.ByteString.Char8 as B
 import Data.Default ( def )
 import Data.Serialize ( Serialize )
@@ -39,19 +36,12 @@ executeCommand bookVar comm = modifyMVar bookVar $ \book -> return $
       MemoPut key value -> ( M.insert key value book
                            , MemoValue "ok" )
 
-commandExecuter :: MVar Book -> Pipe Command Result IO ()
-commandExecuter bookVar = forever $ do
-    comm <- await
-    yield =<< lift (executeCommand bookVar comm)
-
 main :: IO ()
 main = do
     bookVar <- newMVar M.empty
     let lsocket = undefined
-    runDetached Nothing def $ runSocketServer lsocket $ \reader writer -> do
-           runPipe (writer <+< serializer
-                    <+< commandExecuter bookVar
-                    <+< deserializer <+< reader)
+    runDetached Nothing def $ do
+        runSocketServer lsocket $ commandReceiver (executeCommand bookVar)
     let socket = undefined
-    runSocketClient socket $ \_reader writer ->
-        runPipe (writer <+< serializer <+< (yield (MemoPut "name" "alex")))
+    res <- runSocketClient socket $ commandSender (MemoPut "name" "alex")
+    print (res :: Maybe Result)
