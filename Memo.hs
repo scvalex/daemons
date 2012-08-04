@@ -5,6 +5,7 @@ module Main where
 import Control.Concurrent ( threadDelay )
 import Control.Concurrent.MVar
 import qualified Control.Exception as CE
+import Control.Monad ( when )
 import Control.Pipe.C3
 import Control.Pipe.Socket
 import qualified Data.ByteString.Char8 as B
@@ -13,7 +14,7 @@ import Data.Serialize ( Serialize )
 import qualified Data.Map as M
 import GHC.Generics
 import qualified Network.Socket as NS
-import System.Directory ( getHomeDirectory )
+import System.Directory ( getHomeDirectory, doesFileExist )
 import System.FilePath
 import System.Posix.Daemon
 
@@ -56,12 +57,16 @@ bindPort port = do
 startDaemon :: (Serialize a, Serialize b) => String -> Int -> (a -> IO b) -> IO ()
 startDaemon name port executeCommand = do
     home <- getHomeDirectory
-    runDetached (Just (home </> ("." ++ name) <.> "pid")) def $ do
-        CE.bracket
-            (bindPort port)
-            NS.sClose
-            (\lsocket ->
-                 runSocketServer lsocket $ commandReceiver executeCommand)
+    let pidfile = home </> ("." ++ name) <.> "pid"
+    dfe <- doesFileExist pidfile
+    when (not dfe) $ do
+        runDetached (Just pidfile) def $ do
+            CE.bracket
+                (bindPort port)
+                NS.sClose
+                (\lsocket ->
+                     runSocketServer lsocket $ commandReceiver executeCommand)
+        threadDelay 1000000
 
 getSocket :: String -> Int -> IO NS.Socket
 getSocket hostname port = do
@@ -85,6 +90,5 @@ main :: IO ()
 main = NS.withSocketsDo $ do
     bookVar <- newMVar M.empty
     startDaemon "memo" 7856 (runMemoCommand bookVar)
-    threadDelay 1000000
     res <- runClient "localhost"  7856 (MemoPut "name" "alex")
     print (res :: Maybe Response)
