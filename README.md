@@ -1,12 +1,12 @@
-pipes-c3
-========
+daemons
+=======
 
-> Library to easily control daemonized Haskell programs
+> Daemons in Haskell made fun and easy
 
 Example
 -------
 
-See [Memo](https://github.com/scvalex/pipes-c3/blob/master/Memo.hs)
+See [Memo](https://github.com/scvalex/daemons/blob/master/Memo.hs)
 for an example.
 
 Modules

@@ -15,6 +15,10 @@ import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , LockRequest (..), setLock, fdWrite )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 
+-- FIXME Add a way to check status of a daemon
+-- FIXME Add a way to brutally kill a deamon
+-- FIXME Add usage example
+
 -- | Where should the output (and input) of a daemon be redirected to?
 -- (we can't just leave it to the current terminal, because it may be
 -- closed, and that would kill the daemon).

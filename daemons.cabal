@@ -1,4 +1,4 @@
-Name:           pipes-c3
+Name:           daemons
 Version:        0.1.0
 Cabal-Version:  >= 1.8
 License:        GPL-3
@@ -6,7 +6,7 @@ License-File:   LICENSE
 Stability:      experimental
 Author:         Alexandru Scvortov <scvalex@gmail.com>
 Maintainer:     scvalex@gmail.com
-Homepage:       https://github.com/scvalex/pipes-c3
+Homepage:       https://github.com/scvalex/daemons
 Category:       Text
 Synopsis:       Library to easily control daemonized programs
 Build-Type:     Simple
@@ -25,7 +25,7 @@ Data-Files:             README.md, NEWS.md, LICENSE
 
 Source-repository head
   Type:                 git
-  Location:             git://github.com/scvalex/pipes-c3.git
+  Location:             git://github.com/scvalex/daemons.git
 
 Library
   Build-depends:        base >= 4 && < 5, bytestring, cereal,

@@ -17,7 +17,7 @@ test: build
 clean:
 	cabal clean
 
-dist/setup-config: pipes-c3.cabal
+dist/setup-config: daemons.cabal
 	cabal configure --enable-tests
 
 doc: build
