@@ -1,6 +1,9 @@
 module System.Daemon (
         -- * Daemons and clients
-        startDaemon, runClient
+        startDaemon, runClient,
+
+        -- * Types
+        HostName, Port
     ) where
 
 import Control.Concurrent ( threadDelay )
@@ -19,19 +22,10 @@ import System.Directory ( getHomeDirectory, doesFileExist )
 import System.FilePath ( (</>), (<.>) )
 import System.Posix.Daemon ( runDetached )
 
-bindPort :: Int -> IO Socket
-bindPort port = do
-    CE.bracketOnError
-        (socket AF_INET Stream defaultProtocol)
-        sClose
-        (\s -> do
-            setSocketOption s ReuseAddr 1
-            bindSocket s (SockAddrInet (fromIntegral port)
-                                                  iNADDR_ANY)
-            listen s maxListenQueue
-            return s)
+type Port = Int
+type HostName = String
 
-startDaemon :: (Serialize a, Serialize b) => String -> Int -> (a -> IO b) -> IO ()
+startDaemon :: (Serialize a, Serialize b) => String -> Port -> (a -> IO b) -> IO ()
 startDaemon name port executeCommand = do
     home <- getHomeDirectory
     let pidfile = home </> ("." ++ name) <.> "pid"
@@ -45,7 +39,27 @@ startDaemon name port executeCommand = do
                      runSocketServer lsocket $ commandReceiver executeCommand)
         threadDelay 1000000
 
-getSocket :: String -> Int -> IO Socket
+runClient :: (Serialize a, Serialize b) => HostName -> Port -> a -> IO (Maybe b)
+runClient hostname port comm = do
+    CE.bracket
+        (getSocket hostname port)
+        sClose
+        (\s ->
+             runSocketClient s (commandSender comm))
+
+bindPort :: Port -> IO Socket
+bindPort port = do
+    CE.bracketOnError
+        (socket AF_INET Stream defaultProtocol)
+        sClose
+        (\s -> do
+            setSocketOption s ReuseAddr 1
+            bindSocket s (SockAddrInet (fromIntegral port)
+                                                  iNADDR_ANY)
+            listen s maxListenQueue
+            return s)
+
+getSocket :: HostName -> Port -> IO Socket
 getSocket hostname port = do
     addrInfos <- getAddrInfo Nothing (Just hostname) (Just $ show port)
     CE.bracketOnError
@@ -54,11 +68,3 @@ getSocket hostname port = do
         (\s -> do
              connect s (addrAddress $ head addrInfos)
              return s)
-
-runClient :: (Serialize a, Serialize b) => String -> Int -> a -> IO (Maybe b)
-runClient hostname port comm = do
-    CE.bracket
-        (getSocket hostname port)
-        sClose
-        (\s ->
-             runSocketClient s (commandSender comm))
