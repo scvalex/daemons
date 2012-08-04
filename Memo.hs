@@ -39,35 +39,35 @@ runMemoCommand bookVar comm = modifyMVar bookVar $ \book -> return $
       MemoPut key value -> ( M.insert key value book
                            , MemoValue "ok" )
 
-bindPort :: String -> Int -> IO NS.Socket
-bindPort hostname port = do
-    hostAddress <- NS.inet_addr hostname
+bindPort :: Int -> IO NS.Socket
+bindPort port = do
     CE.bracketOnError
         (NS.socket NS.AF_INET NS.Stream NS.defaultProtocol)
         NS.sClose
         (\socket -> do
             NS.setSocketOption socket NS.ReuseAddr 1
-            NS.bindSocket socket (NS.SockAddrInet (fromIntegral port) hostAddress)
+            NS.bindSocket socket (NS.SockAddrInet (fromIntegral port)
+                                                  NS.iNADDR_ANY)
             NS.listen socket NS.maxListenQueue
             return socket)
 
-startDaemon :: (Serialize a, Serialize b) => String -> Int -> (a -> IO b) -> IO ()
-startDaemon hostname port executeCommand = do
+startDaemon :: (Serialize a, Serialize b) => Int -> (a -> IO b) -> IO ()
+startDaemon port executeCommand = do
     runDetached Nothing def $ do
         CE.bracket
-            (bindPort hostname port)
+            (bindPort port)
             NS.sClose
             (\lsocket ->
                  runSocketServer lsocket $ commandReceiver executeCommand)
 
 getSocket :: String -> Int -> IO NS.Socket
 getSocket hostname port = do
-    hostAddress <- NS.inet_addr hostname
+    addrInfos <- NS.getAddrInfo Nothing (Just hostname) (Just $ show port)
     CE.bracketOnError
         (NS.socket NS.AF_INET NS.Stream NS.defaultProtocol)
         NS.sClose
         (\socket -> do
-             NS.connect socket (NS.SockAddrInet (fromIntegral port) hostAddress)
+             NS.connect socket (NS.addrAddress $ head addrInfos)
              return socket)
 
 runClient :: (Serialize a, Serialize b) => String -> Int -> a -> IO (Maybe b)
@@ -81,7 +81,7 @@ runClient hostname port comm = do
 main :: IO ()
 main = do
     bookVar <- newMVar M.empty
-    startDaemon "127.0.0.1"  7856 (runMemoCommand bookVar)
+    startDaemon 7856 (runMemoCommand bookVar)
     threadDelay 1000000
-    res <- runClient "127.0.0.1"  7856 (MemoPut "name" "alex")
+    res <- runClient "localhost"  7856 (MemoPut "name" "alex")
     print (res :: Maybe Response)
