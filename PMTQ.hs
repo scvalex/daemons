@@ -4,6 +4,11 @@ module Main where
 
 import Control.Concurrent.Chan ( Chan, newChan, readChan, writeChan )
 import Control.Concurrent.MVar ( MVar, newMVar, modifyMVar )
+import Control.Monad ( forever )
+import Control.Monad.Trans.Class ( lift )
+import Control.Pipe ( runPipe, (<+<), await, yield )
+import Control.Pipe.Serialize ( serializer, deserializer )
+import Control.Pipe.Socket ( Handler )
 import Data.ByteString.Char8 ( ByteString )
 import qualified Data.ByteString.Char8 as B
 import Data.Char ( toLower )
@@ -31,15 +36,29 @@ instance Serialize Response
 
 type Registry = M.Map ByteString (Chan ByteString)
 
-handleCommand :: MVar Registry -> Command -> IO Response
-handleCommand registryVar (Pop topic) = do
-    ch <- getCreateChan registryVar topic
-    val <- readChan ch
-    return (Value val)
-handleCommand registryVar (Push topic val) = do
-    ch <- getCreateChan registryVar topic
-    writeChan ch val
-    return (Value "ok")
+handleCommands :: MVar Registry -> Handler ()
+handleCommands registryVar reader writer = do
+    runPipe (writer <+< serializer
+             <+< commandExecuter
+             <+< deserializer <+< reader)
+  where
+    commandExecuter = forever $ do
+        comm <- await
+        case comm of
+          Pop topic -> do
+              ch <- lift $ getCreateChan registryVar topic
+              transferToPipeFromChan ch
+          Consume topic -> do
+              ch <- lift $ getCreateChan registryVar topic
+              forever $ transferToPipeFromChan ch
+          Push topic val -> do
+              ch <- lift $ getCreateChan registryVar topic
+              lift $ writeChan ch val
+              yield (Value "ok")
+
+    transferToPipeFromChan ch = do
+        val <- lift $ readChan ch
+        yield (Value val)
 
 -- Get the channel for the given topic, and create it if it does not
 -- already exist.
@@ -60,12 +79,20 @@ main :: IO ()
 main = withSocketsDo $ do
     registryVar <- newMVar M.empty
     let options = def { daemonPort = 7857 }
-    startDaemon "pmtq" options (handleCommand registryVar)
+    startDaemonWithHandler "pmtq" options (handleCommands registryVar)
     args <- getArgs
     let args' = map (fromString . map toLower) args
-    res <- case args' of
-      ["pop", key]         -> runClient "localhost" 7857 (Pop key)
-      ["push", key, value] -> runClient "localhost" 7857 (Push key value)
-      ["consume", key]     -> runClient "localhost" 7857 (Consume key)
-      _                    -> error "invalid command"
-    printResult res
+    case args' of
+      ["pop", key] -> do
+          res <- runClient "localhost" 7857 (Pop key)
+          printResult res
+      ["push", key, value] -> do
+          res <- runClient "localhost" 7857 (Push key value)
+          printResult res
+      ["consume", key] -> do
+          runClientWithHandler "localhost" 7857 $ \reader writer -> do
+              runPipe (writer <+< serializer <+< yield (Consume key))
+              runPipe ((forever $ await >>= \res -> lift (printResult (Just res)))
+                       <+< deserializer <+< reader)
+      _ -> do
+          error "invalid command"

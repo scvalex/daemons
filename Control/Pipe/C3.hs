@@ -36,5 +36,5 @@ commandReceiver executeCommand reader writer = do
              <+< deserializer <+< reader)
   where
     commandExecuter = forever $ do
-      comm <- await
-      yield =<< lift (executeCommand comm)
+        comm <- await
+        yield =<< lift (executeCommand comm)
