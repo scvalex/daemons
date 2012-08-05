@@ -1,6 +1,6 @@
 module System.Posix.Daemon (
         -- * Daemons
-        Redirection(..), runDetached, isRunning
+        Redirection(..), runDetached, isRunning, kill, brutalKill
     ) where
 
 import Prelude hiding ( FilePath )
@@ -17,8 +17,8 @@ import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , createFile
                        , LockRequest (..), setLock, fdWrite )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
+import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
 
--- FIXME Add a way to brutally kill a deamon
 -- FIXME Add usage example
 
 -- | Where should the output (and input) of a daemon be redirected to?
@@ -126,3 +126,18 @@ isRunning pidFile = do
           return (isJust ml)
       else do
           return False
+
+-- | Send 'sigQUIT' to the process recorded in the pidfile.  This
+-- gives the process a chance to close cleanly.
+kill :: FilePath -> IO ()
+kill = signalProcessByFilePath sigQUIT
+
+-- | Send 'sigKILL' to the process recorded in the pidfile.  This
+-- immediately kills the process.
+brutalKill :: FilePath -> IO ()
+brutalKill = signalProcessByFilePath sigKILL
+
+signalProcessByFilePath :: Signal -> FilePath -> IO ()
+signalProcessByFilePath signal pidFile = do
+    pid <- readFile pidFile
+    signalProcess signal (read pid)
