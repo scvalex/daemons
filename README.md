@@ -7,9 +7,9 @@ Example
 -------
 
 Here's
-[AddOne.hs](https://github.com/scvalex/daemons/blob/master/AddOne.hs),
-a simple daemon that waits for numbers and responds with the
-incremented number.
+[AddOne](https://github.com/scvalex/daemons/blob/master/AddOne.hs), a
+simple daemon that waits for numbers and responds with the incremented
+number.
 
     import Data.Default ( def )
     import System.Environment ( getArgs )
