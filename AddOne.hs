@@ -1,3 +1,5 @@
+module Main where
+
 import Data.Default ( def )
 import System.Environment ( getArgs )
 import System.Daemon
