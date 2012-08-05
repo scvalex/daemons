@@ -46,34 +46,30 @@ handleCommands registryVar reader writer = do
         comm <- await
         case comm of
           Pop topic -> do
-              ch <- lift $ getCreateChan registryVar topic
+              ch <- lift $ getCreateChan topic
               transferToPipeFromChan ch
           Consume topic -> do
-              ch <- lift $ getCreateChan registryVar topic
+              ch <- lift $ getCreateChan topic
               forever $ transferToPipeFromChan ch
           Push topic val -> do
-              ch <- lift $ getCreateChan registryVar topic
+              ch <- lift $ getCreateChan topic
               lift $ writeChan ch val
               yield (Value "ok")
 
+    -- Transfer a value from the given channel to the pipe.
     transferToPipeFromChan ch = do
         val <- lift $ readChan ch
         yield (Value val)
 
--- Get the channel for the given topic, and create it if it does not
--- already exist.
-getCreateChan :: MVar Registry -> ByteString -> IO (Chan ByteString)
-getCreateChan registryVar topic = modifyMVar registryVar $ \registry -> do
-    case M.lookup topic registry of
-      Nothing -> do
-          ch <- newChan
-          return (M.insert topic ch registry, ch)
-      Just ch -> do
-          return (registry, ch)
-
-printResult :: Maybe Response -> IO ()
-printResult Nothing            = hPutStrLn stderr "no response"
-printResult (Just (Value val)) = B.putStrLn val
+    -- Get the channel for the given topic, and create it if it does
+    -- not already exist.
+    getCreateChan topic = modifyMVar registryVar $ \registry -> do
+        case M.lookup topic registry of
+          Nothing -> do
+              ch <- newChan
+              return (M.insert topic ch registry, ch)
+          Just ch -> do
+              return (registry, ch)
 
 main :: IO ()
 main = withSocketsDo $ do
@@ -96,3 +92,7 @@ main = withSocketsDo $ do
                        <+< deserializer <+< reader)
       _ -> do
           error "invalid command"
+  where
+    printResult :: Maybe Response -> IO ()
+    printResult Nothing            = hPutStrLn stderr "no response"
+    printResult (Just (Value val)) = B.putStrLn val
