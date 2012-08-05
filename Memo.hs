@@ -2,9 +2,10 @@
 
 module Main where
 
-import Control.Concurrent.MVar
+import Control.Concurrent.MVar ( MVar, newMVar, modifyMVar )
 import Data.ByteString.Char8 ( ByteString )
 import Data.Char ( toLower )
+import Data.Default ( def )
 import Data.Serialize ( Serialize )
 import Data.String ( fromString )
 import qualified Data.Map as M
@@ -40,8 +41,8 @@ runMemoCommand bookVar comm = modifyMVar bookVar $ \book -> return $
 main :: IO ()
 main = withSocketsDo $ do
     bookVar <- newMVar M.empty
-    startDaemon "memo" 7856 (runMemoCommand bookVar)
-
+    let options = def { daemonPort = 7856 }
+    startDaemon "memo" options (runMemoCommand bookVar)
     args <- getArgs
     let args' = map (fromString . map toLower) args
     res <- case args' of

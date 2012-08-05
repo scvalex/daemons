@@ -3,7 +3,10 @@ module System.Daemon (
         startDaemon, runClient,
 
         -- * Types
-        HostName, Port
+        DaemonOptions(..), PidFile(..), HostName, Port,
+
+        -- * Helpers
+        bindPort, getSocket
     ) where
 
 import Control.Concurrent ( threadDelay )
@@ -11,8 +14,9 @@ import qualified Control.Exception as CE
 import Control.Monad ( when )
 import Control.Pipe.C3 ( commandSender, commandReceiver )
 import Control.Pipe.Socket ( runSocketServer, runSocketClient )
-import Data.Default ( def )
+import Data.Default ( Default(..) )
 import Data.Serialize ( Serialize )
+import Data.String ( IsString(..) )
 import Network.Socket ( Socket, SockAddr(..), Family(..), SocketType(..)
                       , SocketOption(..), setSocketOption
                       , socket, sClose, connect, bindSocket, listen
@@ -25,32 +29,54 @@ import System.Posix.Daemon ( runDetached )
 type Port = Int
 type HostName = String
 
+-- | The configuration options of a daemon.  See 'startDaemon' for a
+-- description of each.
+data DaemonOptions = DaemonOptions
+    { daemonPort     :: Port
+    , daemonPidFile  :: PidFile
+    } deriving ( Show )
+
+instance Default DaemonOptions where
+    def = DaemonOptions { daemonPort    = 5000
+                        , daemonPidFile = InHome
+                        }
+
+-- | The location of the daemon's pidfile.
+data PidFile = InHome
+             | PidFile FilePath
+               deriving ( Show )
+
+instance IsString PidFile where
+    fromString = PidFile
+
 -- | Start a daemon running on the given port, using the given handler
 -- to respond to events.  If the daemon is already running, just
 -- return.
 --
--- The pidfile @~/.name.pid@ will be created and locked.  This
+-- The pidfile @PidFile options@ will be created and locked.  This
 -- function checks the pidfile to see if the daemon is already
 -- running.
 --
 -- The daemon will listen for incoming connections on all interfaces
--- on @port@.
+-- on @daemonPort options@.
 --
 -- The @handler@ is just a function that takes a command and returns a
 -- response.
 startDaemon :: (Serialize a, Serialize b)
-            => String       -- ^ name
-            -> Port         -- ^ port
-            -> (a -> IO b)  -- ^ handler
+            => String         -- ^ name
+            -> DaemonOptions  -- ^ options
+            -> (a -> IO b)    -- ^ handler
             -> IO ()
-startDaemon name port executeCommand = do
+startDaemon name options executeCommand = do
     home <- getHomeDirectory
-    let pidfile = home </> ("." ++ name) <.> "pid"
+    let pidfile = case daemonPidFile options of
+                    InHome       -> home </> ("." ++ name) <.> "pid"
+                    PidFile path -> path
     dfe <- doesFileExist pidfile
     when (not dfe) $ do
         runDetached (Just pidfile) def $ do
             CE.bracket
-                (bindPort port)
+                (bindPort (daemonPort options))
                 sClose
                 (\lsocket ->
                      runSocketServer lsocket $ commandReceiver executeCommand)
