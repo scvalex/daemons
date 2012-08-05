@@ -54,6 +54,13 @@ Executable memo
   Main-Is:              Memo.hs
   Ghc-options:          -Wall
 
+Executable addone
+  Build-depends:        base >= 4 && < 5, bytestring, cereal,
+                        containers, data-default, directory, filepath,
+                        ghc-prim, pipes, transformers, network, unix
+  Main-Is:              AddOne.hs
+  Ghc-options:          -Wall
+
 Test-suite daemon
   Hs-Source-Dirs:       Test, .
   Main-Is:              Daemon.hs

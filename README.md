@@ -6,8 +6,32 @@ daemons
 Example
 -------
 
-See [Memo](https://github.com/scvalex/daemons/blob/master/Memo.hs)
-for an example.
+Here's
+[AddOne.hs](https://github.com/scvalex/daemons/blob/master/AddOne.hs),
+a simple daemon that waits for numbers and responds with the
+incremented number.
+
+    import Data.Default ( def )
+    import System.Environment ( getArgs )
+    import System.Daemon
+
+    addOne :: Int -> IO Int
+    addOne n = return (n + 1)
+
+    main :: IO ()
+    main = do
+        startDaemon "addOne" def addOne
+        [n] <- getArgs
+        res <- runClient "localhost" 5000 ((read n) :: Int)
+        print (res :: Maybe Int)
+
+The two important functions above are `startDaemon`, which checks if a
+daemon named `addOne` is already running, and starts it if not, and
+`runClient` which connects to the daemon running on `localhost:5000`,
+passes it a number, and waits for the response.
+
+For a less trivial example, see the in-memory key-value store,
+[Memo](https://github.com/scvalex/daemons/blob/master/Memo.hs).
 
 Modules
 -------
