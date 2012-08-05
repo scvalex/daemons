@@ -1,6 +1,51 @@
+-- | This module provides a simple interface to creating, checking the
+-- status of, and stopping background jobs.
+--
+-- Use 'runDetached' to start a background job.  For instance, here is
+-- a daemon that peridically hits a webserver:
+--
+-- > import Control.Concurrent
+-- > import Control.Monad
+-- > import Data.Default
+-- > import Data.Maybe
+-- > import Network.BSD
+-- > import Network.HTTP
+-- > import System.Daemon
+-- >
+-- > main :: IO ()
+-- > main = runDetached (Just "diydns.pid") def $ forever $ do
+-- >     hostname <- getHostName
+-- >     _ <- simpleHTTP
+-- >              (Request { rqURI     = fromJust (parseURI "http://foo.com/dns")
+-- >                       , rqMethod  = GET
+-- >                       , rqHeaders = []
+-- >                       , rqBody    = fromString hostname })
+-- >     threadDelay (600 * 1000 * 1000)
+--
+-- To check if the above job is running, use 'isRunning' with the same
+-- pidfile:
+--
+-- > isRunning "diydns.pid"
+--
+-- Finally, to stop the above job (maybe because we're rolling a new
+-- version of it), use 'kill':
+--
+-- > kill "diydns.pid"
+--
+-- As a side note, the code above is a script that the author uses as
+-- a sort of homebrew dynamic DNS: the remote address is a CGI script
+-- that records the IP addresses of all incoming requests in separate
+-- files named after the contents of the requests; the addresses are
+-- then viewable with any browser.
 module System.Posix.Daemon (
-        -- * Daemons
-        Redirection(..), runDetached, isRunning, kill, brutalKill
+        -- * Starting
+        runDetached, Redirection(..),
+
+        -- * Status
+        isRunning,
+
+        -- * Stopping
+        kill, brutalKill
     ) where
 
 import Prelude hiding ( FilePath )
@@ -18,19 +63,17 @@ import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
 
--- FIXME Add usage example
-
 -- | Where should the output (and input) of a daemon be redirected to?
 -- (we can't just leave it to the current terminal, because it may be
 -- closed, and that would kill the daemon).
 --
--- When in doubt, just use @def@, the default value.
+-- When in doubt, just use 'def', the default value.
 --
--- @DevNull@ causes the output to be redirected to @/dev/null@.  This
+-- 'DevNull' causes the output to be redirected to @\/dev\/null@.  This
 -- is safe and is what you want in most cases.
 --
 -- If you don't want to lose the output (maybe because you're using it
--- for logging), use @ToFile@, instead.
+-- for logging), use 'ToFile', instead.
 data Redirection = DevNull
                  | ToFile FilePath
                    deriving ( Show )
@@ -140,6 +183,7 @@ kill = signalProcessByFilePath sigQUIT
 brutalKill :: FilePath -> IO ()
 brutalKill = signalProcessByFilePath sigKILL
 
+-- | Send a signal to a process whose pid is recorded in a file.
 signalProcessByFilePath :: Signal -> FilePath -> IO ()
 signalProcessByFilePath signal pidFile = do
     pid <- readFile pidFile
