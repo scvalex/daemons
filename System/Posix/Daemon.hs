@@ -10,7 +10,8 @@
 -- > import Data.Maybe
 -- > import Network.BSD
 -- > import Network.HTTP
--- > import System.Daemon
+-- > import Network.URI
+-- > import System.Posix.Daemon
 -- >
 -- > main :: IO ()
 -- > main = runDetached (Just "diydns.pid") def $ forever $ do
@@ -19,7 +20,7 @@
 -- >              (Request { rqURI     = fromJust (parseURI "http://foo.com/dns")
 -- >                       , rqMethod  = GET
 -- >                       , rqHeaders = []
--- >                       , rqBody    = fromString hostname })
+-- >                       , rqBody    = hostname })
 -- >     threadDelay (600 * 1000 * 1000)
 --
 -- To check if the above job is running, use 'isRunning' with the same
