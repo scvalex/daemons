@@ -8,16 +8,24 @@ Author:         Alexandru Scvortov <scvalex@gmail.com>
 Maintainer:     scvalex@gmail.com
 Homepage:       https://github.com/scvalex/daemons
 Category:       Text
-Synopsis:       Library to easily control daemonized programs
+Synopsis:       Daemons in Haskell made fun and easy
 Build-Type:     Simple
 Description:
+        "Control.Pipe.C3" provides simple RPC-like wrappers for pipes.
+        .
         "Control.Pipe.Serialize" provides serialization and
         incremental deserialization pipes.
         .
         "Control.Pipe.Socket" provides functions to setup pipes around
         sockets.
         .
-        See the README.md file for details.
+        "System.Daemon" provides a high-level interface to starting
+        daemonized programs that are controlled through sockets.
+        .
+        "System.Posix.Daemon" provides a low-level interface to
+        starting, and controlling detached jobs.
+        .
+        See the @README.md@ file and the homepage for details.
 
 Extra-Source-Files:     Makefile
 
