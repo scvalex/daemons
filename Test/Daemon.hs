@@ -19,7 +19,7 @@ main :: IO ()
 main = defaultMainWithOpts
        [ testCase "firstRun" testFirst
        , testCase "withPid" testWithPid
-       -- , testCase "isRunning" testIsRunning
+       , testCase "isRunning" testIsRunning
        , testCase "exclusion" testExclusion
        , testCase "release" testRelease
        , testCase "redirection" testRedirection
@@ -59,17 +59,30 @@ testWithPid = flip finally (ensureRemoved ["pid", "tmp"]) $ do
     pid <- readFile "pid"
     null pid @?= False
 
--- testIsRunning :: Assertion
--- testIsRunning = flip finally (ensureRemoved ["pid", "tmp"]) $ do
---     runDetached (Just "pid") def $ do
---         running <- isRunning "pid"
---         writeFile "tmp" (show running)
---         sleep 10000
---     sleep 500
---     running <- isRunning "pid"
---     running @?= True
---     txt <- readFile "tmp"
---     txt @?= "True"
+testIsRunning :: Assertion
+testIsRunning = flip finally (ensureRemoved ["pid", "tmp"]) $ do
+    runDetached (Just "pid") def $ do
+        running <- isRunning "pid"
+        writeFile "tmp" (show running)
+        sleep 10000
+    sleep 500
+
+-- FIXME There's some weird behaviour when the process that has locked
+-- the file (or its ancestors, or its descendents) use 'isRunning'.
+--
+-- The semantics of 'fnctl' are "try to aquire the requested lock; if
+-- there is an incompatible lock in place, return it".  Of course,
+-- this means that the process that acquired the lock sees it as
+-- unlocked.
+--
+-- We mitigated the obvious part of the problem (same process) by
+-- checking the pid in the pidfile.  Now, we're left with the case
+-- where an ancestor of the process thinks it can set the lock.
+
+    -- running <- isRunning "pid"
+    -- running @?= True
+    txt <- readFile "tmp"
+    txt @?= "True"
 
 testExclusion :: Assertion
 testExclusion = flip finally (ensureRemoved ["pid", "tmp"]) $ do

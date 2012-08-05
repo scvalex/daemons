@@ -7,7 +7,6 @@ import Prelude hiding ( FilePath )
 
 import Control.Monad ( when )
 import Data.Default ( Default(..) )
-import Data.Maybe ( isJust )
 import System.Directory ( doesFileExist )
 import System.FilePath ( FilePath )
 import System.IO ( SeekMode(..), hFlush, stdout )
@@ -15,7 +14,7 @@ import System.Posix.Files ( stdFileMode )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
                        , createFile
-                       , LockRequest (..), setLock, fdWrite )
+                       , LockRequest (..), setLock, fdWrite, fdRead )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
 
@@ -109,14 +108,6 @@ runDetached maybePidFile redirection program = do
         -- note that we do not close the fd; doing so would release
         -- the lock
 
--- FIXME There's some weird behaviour when the process that has locked
--- the file (or its ancestors, or its descendents) use 'isRunning'.
---
--- The semantics of 'fnctl' are "try to aquire the requested lock; if
--- there is an incompatible lock in place, return it".  Of course,
--- this means that the process that acquired the lock sees it as
--- unlocked.
-
 -- | Return 'True' if the given file is locked by a process.  In our
 -- case, returns 'True' when the daemon that created the file is still
 -- alive.
@@ -125,10 +116,17 @@ isRunning pidFile = do
     dfe <- doesFileExist pidFile
     if dfe
       then do
-          fd <- openFd pidFile WriteOnly Nothing defaultFileFlags
+          fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
+          -- is there an *incompatible* lock on the pidfile?
           ml <- getLock fd (WriteLock, AbsoluteSeek, 0, 0)
+          (pid, _) <- fdRead fd 100
           closeFd fd
-          return (isJust ml)
+          case ml of
+            Nothing -> do
+                pid' <- getProcessID
+                return (read pid == pid')
+            Just _ -> do
+                return True
       else do
           return False
 
