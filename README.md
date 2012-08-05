@@ -25,6 +25,13 @@ incremented number.
         res <- runClient "localhost" 5000 ((read n) :: Int)
         print (res :: Maybe Int)
 
+Running it, we see:
+
+    % addone 22
+    Just 23
+    % addone 41
+    Just 42
+
 The two important functions above are `startDaemon`, which checks if a
 daemon named `addOne` is already running, and starts it if not, and
 `runClient` which connects to the daemon running on `localhost:5000`,
