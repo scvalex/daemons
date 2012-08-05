@@ -61,6 +61,13 @@ Executable addone
   Main-Is:              AddOne.hs
   Ghc-options:          -Wall
 
+Executable queue
+  Build-depends:        base >= 4 && < 5, bytestring, cereal,
+                        containers, data-default, directory, filepath,
+                        ghc-prim, pipes, transformers, network, unix
+  Main-Is:              PMTQ.hs
+  Ghc-options:          -Wall
+
 Test-suite daemon
   Hs-Source-Dirs:       Test, .
   Main-Is:              Daemon.hs

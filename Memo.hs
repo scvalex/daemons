@@ -14,39 +14,37 @@ import Network.Socket ( withSocketsDo )
 import System.Environment ( getArgs )
 import System.Daemon
 
-data Command = MemoGet ByteString
-             | MemoPut ByteString ByteString
+data Command = Get ByteString
+             | Put ByteString ByteString
                deriving ( Generic, Show )
 
 instance Serialize Command
 
-data Response = MemoFailed String
-              | MemoValue ByteString
+data Response = Failed String
+              | Value ByteString
                 deriving ( Generic, Show )
 
 instance Serialize Response
 
 type Book = M.Map ByteString ByteString
 
-runMemoCommand :: MVar Book -> Command -> IO Response
-runMemoCommand bookVar comm = modifyMVar bookVar $ \book -> return $
+handleCommand :: MVar Book -> Command -> IO Response
+handleCommand bookVar comm = modifyMVar bookVar $ \book -> return $
     case comm of
-      MemoGet key -> ( book
-                     , maybe (MemoFailed "not found")
-                             MemoValue
-                             (M.lookup key book) )
-      MemoPut key value -> ( M.insert key value book
-                           , MemoValue "ok" )
+      Get key -> ( book
+                 , maybe (Failed "not found") Value (M.lookup key book) )
+      Put key value -> ( M.insert key value book
+                       , Value "ok" )
 
 main :: IO ()
 main = withSocketsDo $ do
     bookVar <- newMVar M.empty
     let options = def { daemonPort = 7856 }
-    startDaemon "memo" options (runMemoCommand bookVar)
+    startDaemon "memo" options (handleCommand bookVar)
     args <- getArgs
     let args' = map (fromString . map toLower) args
     res <- case args' of
-      ["get", key]        -> runClient "localhost"  7856 (MemoGet key)
-      ["put", key, value] -> runClient "localhost"  7856 (MemoPut key value)
+      ["get", key]        -> runClient "localhost"  7856 (Get key)
+      ["put", key, value] -> runClient "localhost"  7856 (Put key value)
       _                   -> error "invalid command"
     print (res :: Maybe Response)

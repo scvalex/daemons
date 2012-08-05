@@ -74,7 +74,6 @@ startDaemon name options executeCommand = do
                     PidFile path -> path
     running <- isRunning pidfile
     when (not running) $ do
-        putStrLn "starting new daemon"
         runDetached (Just pidfile) def $ do
             CE.bracket
                 (bindPort (daemonPort options))
