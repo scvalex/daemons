@@ -40,6 +40,10 @@ passes it a number, and waits for the response.
 For a less trivial example, see the in-memory key-value store,
 [Memo](https://github.com/scvalex/daemons/blob/master/Memo.hs).
 
+For an example that uses the streaming interface of `daemons`, see
+[PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs) (Poor
+Man's Task Queue).
+
 Modules
 -------
 
