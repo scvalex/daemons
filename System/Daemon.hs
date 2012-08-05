@@ -22,9 +22,9 @@ import Network.Socket ( Socket, SockAddr(..), Family(..), SocketType(..)
                       , socket, sClose, connect, bindSocket, listen
                       , getAddrInfo, addrAddress
                       , defaultProtocol, iNADDR_ANY, maxListenQueue )
-import System.Directory ( getHomeDirectory, doesFileExist )
+import System.Directory ( getHomeDirectory )
 import System.FilePath ( (</>), (<.>) )
-import System.Posix.Daemon ( runDetached )
+import System.Posix.Daemon ( runDetached, isRunning )
 
 type Port = Int
 type HostName = String
@@ -72,8 +72,9 @@ startDaemon name options executeCommand = do
     let pidfile = case daemonPidFile options of
                     InHome       -> home </> ("." ++ name) <.> "pid"
                     PidFile path -> path
-    dfe <- doesFileExist pidfile
-    when (not dfe) $ do
+    running <- isRunning pidfile
+    when (not running) $ do
+        putStrLn "starting new daemon"
         runDetached (Just pidfile) def $ do
             CE.bracket
                 (bindPort (daemonPort options))

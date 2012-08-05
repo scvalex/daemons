@@ -1,21 +1,23 @@
 module System.Posix.Daemon (
         -- * Daemons
-        Redirection(..), runDetached
+        Redirection(..), runDetached, isRunning
     ) where
 
 import Prelude hiding ( FilePath )
 
 import Control.Monad ( when )
 import Data.Default ( Default(..) )
+import Data.Maybe ( isJust )
 import System.Directory ( doesFileExist )
 import System.FilePath ( FilePath )
 import System.IO ( SeekMode(..), hFlush, stdout )
+import System.Posix.Files ( stdFileMode )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
+                       , createFile
                        , LockRequest (..), setLock, fdWrite )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 
--- FIXME Add a way to check status of a daemon
 -- FIXME Add a way to brutally kill a deamon
 -- FIXME Add usage example
 
@@ -82,7 +84,7 @@ runDetached maybePidFile redirection program = do
         let file = case redirection of
                      DevNull         -> "/dev/null"
                      ToFile filepath -> filepath
-        fd <- openFd file ReadWrite (Just 770) defaultFileFlags
+        fd <- openFd file ReadWrite (Just stdFileMode) defaultFileFlags
         hFlush stdout
         mapM_ (dupTo fd) [stdOutput, stdError]
         closeFd fd
@@ -96,18 +98,31 @@ runDetached maybePidFile redirection program = do
 
     -- Check if the pidfile exists; fail if it does, and create it, otherwise
     checkPidFile = withPidFile $ \pidFile -> do
-        dfe <- doesFileExist pidFile
-        when dfe $ do
-            fd <- openFd pidFile WriteOnly Nothing defaultFileFlags
-            ml <- getLock fd (ReadLock, AbsoluteSeek, 0, 0)
-            closeFd fd
-            case ml of
-              Just (pid, _) -> fail (show pid ++ " already running")
-              Nothing       -> return ()
+        running <- isRunning pidFile
+        when running $ fail "already running"
 
     writePidFile = withPidFile $ \pidFile -> do
-        fd <- openFd pidFile WriteOnly (Just 777) defaultFileFlags
+        fd <- createFile pidFile stdFileMode
         setLock fd (WriteLock, AbsoluteSeek, 0, 0)
         pid <- getProcessID
         ignore $ fdWrite fd (show pid)
-        closeFd fd
+        -- note that we do not close the fd; doing so would release
+        -- the lock
+
+-- FIXME There's some weird behaviour when the process that has locked
+-- the file (or its ancestors, or its descendents) use 'isRunning'.
+
+-- | Return 'True' if the given file is locked by a process.  In our
+-- case, returns 'True' when the daemon that created the file is still
+-- alive.
+isRunning :: FilePath -> IO Bool
+isRunning pidFile = do
+    dfe <- doesFileExist pidFile
+    if dfe
+      then do
+          fd <- openFd pidFile WriteOnly Nothing defaultFileFlags
+          ml <- getLock fd (WriteLock, AbsoluteSeek, 0, 0)
+          closeFd fd
+          return (isJust ml)
+      else do
+          return False
