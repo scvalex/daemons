@@ -9,7 +9,7 @@ import Data.Default
 import Data.Monoid
 import System.Directory
 import System.Posix.Daemon
-import System.Posix.Process ( getProcessID )
+import System.Posix.Process
 
 import Test.Framework
 import Test.Framework.Providers.HUnit
@@ -19,6 +19,7 @@ main :: IO ()
 main = defaultMainWithOpts
        [ testCase "firstRun" testFirst
        , testCase "withPid" testWithPid
+       -- , testCase "isRunning" testIsRunning
        , testCase "exclusion" testExclusion
        , testCase "release" testRelease
        , testCase "redirection" testRedirection
@@ -57,6 +58,18 @@ testWithPid = flip finally (ensureRemoved ["pid", "tmp"]) $ do
     txt @?= txtExp
     pid <- readFile "pid"
     null pid @?= False
+
+-- testIsRunning :: Assertion
+-- testIsRunning = flip finally (ensureRemoved ["pid", "tmp"]) $ do
+--     runDetached (Just "pid") def $ do
+--         running <- isRunning "pid"
+--         writeFile "tmp" (show running)
+--         sleep 10000
+--     sleep 500
+--     running <- isRunning "pid"
+--     running @?= True
+--     txt <- readFile "tmp"
+--     txt @?= "True"
 
 testExclusion :: Assertion
 testExclusion = flip finally (ensureRemoved ["pid", "tmp"]) $ do

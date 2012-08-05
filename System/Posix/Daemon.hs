@@ -111,6 +111,11 @@ runDetached maybePidFile redirection program = do
 
 -- FIXME There's some weird behaviour when the process that has locked
 -- the file (or its ancestors, or its descendents) use 'isRunning'.
+--
+-- The semantics of 'fnctl' are "try to aquire the requested lock; if
+-- there is an incompatible lock in place, return it".  Of course,
+-- this means that the process that acquired the lock sees it as
+-- unlocked.
 
 -- | Return 'True' if the given file is locked by a process.  In our
 -- case, returns 'True' when the daemon that created the file is still
