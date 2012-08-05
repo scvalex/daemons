@@ -57,8 +57,8 @@ socketWriter socket = forever $ do
 -- at "Control.Pipe.Serialize" which lets you deserialize/serialize
 -- pipes of 'ByteString's easily.
 type Handler r = Producer ByteString IO ()
-               -> Consumer ByteString IO ()
-               -> IO r
+              -> Consumer ByteString IO ()
+              -> IO r
 
 -- | Listen for connections on the given socket, and run 'Handler' on
 -- each received connection.  The socket should previously have been
