@@ -5,7 +5,7 @@ Memo
 
 Welcome to the first `daemons` tutorial, in which we walk through
 writing an in-memory key-value store with an RPC-like interface.  The
-code for this tutorial is (Memo.hs)[Memo.hs].
+code for this tutorial is [Memo.hs](Memo.hs).
 
     {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
     
