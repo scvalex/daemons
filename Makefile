@@ -3,6 +3,7 @@
 all: build test
 
 build: dist/setup-config
+	grep -E "$    " Memo.md | sed 's/$     //' > Memo.hs
 	cabal build
 
 dist: test
