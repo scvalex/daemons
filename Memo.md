@@ -9,9 +9,9 @@ code for this tutorial is [Memo.hs](https://github.com/scvalex/daemons/blob/mast
 
 Concretely, we want a program such that:
 
- - `memo put x 23` associates the value `23` with the key `x`, and
+ - `memo put x 42` associates the value `42` with the key `x`, and
 
- - `memo get x` returns the value `23`.
+ - `memo get x` returns the value `42`.
 
 First of all, the extensions and imports:
 
@@ -46,7 +46,7 @@ and generate it automatically with `Data.Serialize` and
 We import `System.Daemon` which is the high-level interface to the
 `daemons` library.  The daemons' configuration is an instance of
 [Data.Default](http://hackage.haskell.org/package/data-default), so
-we'll be able to just use the defaults.
+we'll be able to use the defaults.
 
     data Command = Put ByteString ByteString
                  | Get ByteString
@@ -55,11 +55,11 @@ we'll be able to just use the defaults.
     instance Serialize Command
     
 
-We define a datatype for `put <key> <value>` and `get <key>` commands.
-We let GHC derive the `Generics` instance, which gives us a pure
-Haskell representation of the type; this is used by the `Serialize`
-instance to generate all the necessary binary serialization and
-deserialization code.
+We define a datatype for the `put <key> <value>` and `get <key>`
+commands.  We let GHC derive the `Generics` instance, which gives us a
+pure Haskell representation of the type; this is used by the
+`Serialize` instance to generate all the necessary binary
+serialization and deserialization code.
 
     data Response = Failed String
                   | Value ByteString
@@ -69,7 +69,7 @@ deserialization code.
     
 
 Similarly, we define a datatype for the possible responses.  These can
-either be the value requested by `get <key>`, or some failure message.
+either be values requested by `get <key>`, or failure messages.
 
     type Book = M.Map ByteString ByteString
     
@@ -150,6 +150,17 @@ Now let's see it in action:
     % dist/build/memo/memo get apples
     Just (Value "23")
     -}
+
+To recap, we:
+
+ - wrote data-types for commands and responses and gave them
+  `Serialize` instances,
+
+ - wrote a handler that takes a command and returns a response,
+
+ - ensured that our daemon is running with `startDaemon`, and
+
+ - sent commands and received responses with `runClient`.
 
 This tutorial illustrates the basic concepts behind `daemons`, but
 hides a powerful feature: the interface is *streaming*.  See the
