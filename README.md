@@ -38,7 +38,7 @@ daemon named `addOne` is already running, and starts it if not, and
 passes it a number, and waits for the response.
 
 For a less trivial example, see the in-memory key-value store,
-[Memo](https://github.com/scvalex/daemons/blob/master/Memo.hs).
+[Memo](https://github.com/scvalex/daemons/blob/master/Memo.md).
 
 For an example that uses the streaming interface of `daemons`, see
 [PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs) (Poor
