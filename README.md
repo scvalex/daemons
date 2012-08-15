@@ -44,6 +44,16 @@ For an example that uses the streaming interface of `daemons`, see
 [PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs) (Poor
 Man's Task Queue).
 
+Installation
+------------
+
+This package is on
+[Hackage](http://hackage.haskell.org/package/daemons).  To install
+it, run:
+
+    cabal update
+    cabal install daemons
+
 Modules
 -------
 
@@ -61,7 +71,6 @@ Modules
 
  - `System.Posix.Daemon` provides a low-level interface to starting,
    and controlling detached jobs.
-
 
 See also
 --------
