@@ -39,7 +39,7 @@ Library
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
                         data-default, directory, filepath, network, pipes,
                         transformers, unix
-  Ghc-options:          -Wall -threaded
+  Ghc-options:          -Wall
   Exposed-modules:      Control.Pipe.C3,
                         Control.Pipe.Serialize,
                         Control.Pipe.Socket,
@@ -52,21 +52,21 @@ Executable memo
                         containers, data-default, directory, filepath,
                         ghc-prim, pipes, transformers, network, unix
   Main-Is:              Memo.hs
-  Ghc-options:          -Wall
+  Ghc-options:          -Wall -threaded
 
 Executable addone
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
                         containers, data-default, directory, filepath,
                         ghc-prim, pipes, transformers, network, unix
   Main-Is:              AddOne.hs
-  Ghc-options:          -Wall
+  Ghc-options:          -Wall -threaded
 
 Executable queue
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
                         containers, data-default, directory, filepath,
                         ghc-prim, pipes, transformers, network, unix
   Main-Is:              PMTQ.hs
-  Ghc-options:          -Wall
+  Ghc-options:          -Wall -threaded
 
 Test-suite daemon
   Hs-Source-Dirs:       Test, .
@@ -75,6 +75,6 @@ Test-suite daemon
 
   Build-Depends:        base >= 4 && < 5, data-default, directory,
                         filepath, unix
-  Ghc-Options:          -Wall
+  Ghc-Options:          -Wall -threaded
 
   Build-Depends:        test-framework, test-framework-hunit, HUnit
