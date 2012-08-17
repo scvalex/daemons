@@ -75,6 +75,6 @@ Test-suite daemon
 
   Build-Depends:        base >= 4 && < 5, data-default, directory,
                         filepath, unix
-  Ghc-Options:          -Wall -threaded
+  Ghc-Options:          -Wall
 
   Build-Depends:        test-framework, test-framework-hunit, HUnit
