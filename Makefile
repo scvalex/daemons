@@ -24,5 +24,5 @@ dist/setup-config: daemons.cabal
 doc: build
 	cabal haddock
 
-p:
-	permamake.sh $(find . -name '*.hs') *.cabal Makefile *.md
+p: clean
+	permamake.sh $(shell find */ -name '*.hs') *.cabal Makefile *.md

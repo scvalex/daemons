@@ -23,7 +23,7 @@ import Data.String ( IsString(..) )
 import Network.Socket ( Socket, SockAddr(..), Family(..), SocketType(..)
                       , SocketOption(..), setSocketOption
                       , socket, sClose, connect, bindSocket, listen
-                      , getAddrInfo, addrAddress
+                      , AddrInfo(..), getAddrInfo, addrAddress, defaultHints
                       , defaultProtocol, iNADDR_ANY, maxListenQueue )
 import System.Directory ( getHomeDirectory )
 import System.FilePath ( (</>), (<.>) )
@@ -147,7 +147,9 @@ bindPort port = do
 -- | Create a socket connected to the given network address.
 getSocket :: HostName -> Port -> IO Socket
 getSocket hostname port = do
-    addrInfos <- getAddrInfo Nothing (Just hostname) (Just $ show port)
+    addrInfos <- getAddrInfo (Just (defaultHints { addrFamily = AF_INET }))
+                             (Just hostname)
+                             (Just $ show port)
     CE.bracketOnError
         (socket AF_INET Stream defaultProtocol)
         sClose
