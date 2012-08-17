@@ -7,7 +7,7 @@ Stability:      experimental
 Author:         Alexandru Scvortov <scvalex@gmail.com>
 Maintainer:     scvalex@gmail.com
 Homepage:       https://github.com/scvalex/daemons
-Category:       Text
+Category:       System, Control, Network
 Synopsis:       Daemons in Haskell made fun and easy
 Build-Type:     Simple
 Description:

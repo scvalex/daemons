@@ -1,4 +1,4 @@
-.PHONY: all build dist install test clean doc
+.PHONY: all build dist install test clean doc p
 
 all: build test
 
@@ -23,3 +23,6 @@ dist/setup-config: daemons.cabal
 
 doc: build
 	cabal haddock
+
+p:
+	permamake.sh $(find . -name '*.hs') *.cabal Makefile *.md
