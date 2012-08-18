@@ -52,21 +52,21 @@ Executable memo
                         containers, data-default, directory, filepath,
                         ghc-prim, pipes, transformers, network, unix
   Main-Is:              Memo.hs
-  Ghc-options:          -Wall -threaded
+  Ghc-options:          -Wall
 
 Executable addone
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
                         containers, data-default, directory, filepath,
                         ghc-prim, pipes, transformers, network, unix
   Main-Is:              AddOne.hs
-  Ghc-options:          -Wall -threaded
+  Ghc-options:          -Wall
 
 Executable queue
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
                         containers, data-default, directory, filepath,
                         ghc-prim, pipes, transformers, network, unix
   Main-Is:              PMTQ.hs
-  Ghc-options:          -Wall -threaded
+  Ghc-options:          -Wall
 
 Test-suite daemon
   Hs-Source-Dirs:       Test, .
