@@ -32,17 +32,21 @@ Running it, we see:
     % addone 41
     Just 42
 
-The two important functions above are `startDaemon`, which checks if a
-daemon named `addOne` is already running, and starts it if not, and
-`runClient` which connects to the daemon running on `localhost:5000`,
-passes it a number, and waits for the response.
+The two important functions above are `ensureDaemonRunning`, which
+checks if a daemon named `addOne` is already running, and starts it if
+not, and `runClient` which connects to the daemon running on
+`localhost:5000`, passes it a number, and waits for the response.
 
-For a less trivial example, see the in-memory key-value store,
-[Memo](https://github.com/scvalex/daemons/blob/master/Memo.md).
+Tutorials and examples
+----------------------
 
-For an example that uses the streaming interface of `daemons`, see
-[PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs) (Poor
-Man's Task Queue).
+ - Tutorial 0:
+[Memo](https://github.com/scvalex/daemons/blob/master/Memo.md) - an
+in-memory key-value store,
+
+ - [PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs)
+(Poor Man's Task Queue) - a task queue using the streaming interface
+of `daemons`.
 
 Installation
 ------------

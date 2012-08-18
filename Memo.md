@@ -111,10 +111,10 @@ book, and returns a confirmation message.
 
 Before doing anything else, we need to ensure that the daemon is
 running: we create an empty book, customize the daemon's default
-options, and finally start it.  Note that `startDaemon` checks if the
-daemon is running and starts it otherwise; so, the daemon will be
-started the first time the program is run, and all later runs will use
-the initial daemon.
+options, and finally start it.  Note that `ensureDaemonRunning` checks
+if the daemon is running and starts it otherwise; so, the daemon will
+be started the first time the program is run, and all later runs will
+use the initial daemon.
 
         args <- getArgs
         let args' = map fromString args
@@ -128,8 +128,8 @@ arguments to `ByteString`s for ease of use.
           _                   -> error "invalid command"
 
 Next, we parse the arguments into a command and send it to the daemon.
-We call `runClient` with the port we gave earlier to `startDaemon` and
-with the parsed command.
+We call `runClient` with the port we gave earlier to
+`ensureDaemonRunning` and with the parsed command.
 
         print (res :: Maybe Response)
     
@@ -158,7 +158,7 @@ To recap, we:
 
  - wrote a handler that takes a command and returns a response,
 
- - ensured that our daemon is running with `startDaemon`, and
+ - ensured that our daemon is running with `ensureDaemonRunning`, and
 
  - sent commands and received responses with `runClient`.
 
