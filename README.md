@@ -57,11 +57,11 @@ What would I use this for?
 Tutorials and examples
 ----------------------
 
- - [Memo](https://github.com/scvalex/daemons/blob/master/examples/Memo.md)
-- in which we write an in-memory key-value store,
+ - [Memo](https://github.com/scvalex/daemons/blob/master/examples/Memo.md) -
+   in which we write an in-memory key-value store,
 
  - [PMTQ](https://github.com/scvalex/daemons/blob/master/examples/PMTQ.hs)
-(Poor Man's Task Queue) - a task queue using the streaming interface
+   (Poor Man's Task Queue) - a task queue using the streaming interface
 of `daemons`.
 
 Installation
