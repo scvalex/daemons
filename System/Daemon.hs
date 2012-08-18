@@ -1,6 +1,6 @@
 module System.Daemon (
         -- * Daemons
-        startDaemon, startDaemonWithHandler,
+        ensureDaemonRunning, ensureDaemonWithHandlerRunning,
 
         -- * Clients,
         runClient, runClientWithHandler,
@@ -32,8 +32,8 @@ import System.Posix.Daemon ( runDetached, isRunning )
 type Port = Int
 type HostName = String
 
--- | The configuration options of a daemon.  See 'startDaemon' for a
--- description of each.
+-- | The configuration options of a daemon.  See 'ensureDaemonRunning'
+-- for a description of each.
 data DaemonOptions = DaemonOptions
     { daemonPort     :: Port
     , daemonPidFile  :: PidFile
@@ -52,22 +52,23 @@ data PidFile = InHome
 instance IsString PidFile where
     fromString = PidFile
 
--- | Simple wrapper around 'startDaemonWithHandler' which uses a
--- simple function to respond to commands and doesn't deal with pipes.
+-- | Simple wrapper around 'ensureDaemonWithHandlerRunning' which uses
+-- a simple function to respond to commands and doesn't deal with
+-- pipes.
 --
 -- The @handler@ is just a function that takes a command and returns a
 -- response.
-startDaemon :: (Serialize a, Serialize b)
-            => String         -- ^ name
-            -> DaemonOptions  -- ^ options
-            -> (a -> IO b)    -- ^ handler
-            -> IO ()
-startDaemon name options executeCommand = do
-    startDaemonWithHandler name options (commandReceiver executeCommand)
+ensureDaemonRunning :: (Serialize a, Serialize b)
+                    => String         -- ^ name
+                    -> DaemonOptions  -- ^ options
+                    -> (a -> IO b)    -- ^ handler
+                    -> IO ()
+ensureDaemonRunning name options executeCommand = do
+    ensureDaemonWithHandlerRunning name options (commandReceiver executeCommand)
 
 -- | Start a daemon running on the given port, using the given handler
--- to respond to events.  If the daemon is already running, just
--- return.
+-- to respond to events.  If the daemon is already running, don't do
+-- anything.  Returns immediately.
 --
 -- The pidfile @PidFile options@ will be created and locked.  This
 -- function checks the pidfile to see if the daemon is already
@@ -79,11 +80,11 @@ startDaemon name options executeCommand = do
 -- The @handler@ is a function that takes the reader and writer
 -- 'ByteString' pipes and does something with them.  See
 -- 'commandReceiver' for an example handler.
-startDaemonWithHandler :: String         -- ^ name
-                       -> DaemonOptions  -- ^ options
-                       -> Handler ()     -- ^ handler
-                       -> IO ()
-startDaemonWithHandler name options handler = do
+ensureDaemonWithHandlerRunning :: String         -- ^ name
+                               -> DaemonOptions  -- ^ options
+                               -> Handler ()     -- ^ handler
+                               -> IO ()
+ensureDaemonWithHandlerRunning name options handler = do
     home <- getHomeDirectory
     let pidfile = case daemonPidFile options of
                     InHome       -> home </> ("." ++ name) <.> "pid"

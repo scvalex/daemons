@@ -75,7 +75,7 @@ main :: IO ()
 main = withSocketsDo $ do
     registryVar <- newMVar M.empty
     let options = def { daemonPort = 7857 }
-    startDaemonWithHandler "pmtq" options (handleCommands registryVar)
+    ensureDaemonWithHandlerRunning "pmtq" options (handleCommands registryVar)
     args <- getArgs
     let args' = map (fromString . map toLower) args
     case args' of

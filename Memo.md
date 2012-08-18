@@ -107,7 +107,7 @@ book, and returns a confirmation message.
     main = do
         bookVar <- newMVar M.empty
         let options = def { daemonPort = 7856 }
-        startDaemon "memo" options (handleCommand bookVar)
+        ensureDaemonRunning "memo" options (handleCommand bookVar)
 
 Before doing anything else, we need to ensure that the daemon is
 running: we create an empty book, customize the daemon's default

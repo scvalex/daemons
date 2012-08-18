@@ -38,7 +38,7 @@ main :: IO ()
 main = do
     bookVar <- newMVar M.empty
     let options = def { daemonPort = 7856 }
-    startDaemon "memo" options (handleCommand bookVar)
+    ensureDaemonRunning "memo" options (handleCommand bookVar)
     args <- getArgs
     let args' = map fromString args
     res <- case args' of
