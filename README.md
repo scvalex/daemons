@@ -58,10 +58,10 @@ Tutorials and examples
 ----------------------
 
  - Tutorial 0:
-[Memo](https://github.com/scvalex/daemons/blob/master/Memo.md) - an
+[Memo](https://github.com/scvalex/daemons/blob/master/examples/Memo.md) - an
 in-memory key-value store,
 
- - [PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs)
+ - [PMTQ](https://github.com/scvalex/daemons/blob/master/examples/PMTQ.hs)
 (Poor Man's Task Queue) - a task queue using the streaming interface
 of `daemons`.
 

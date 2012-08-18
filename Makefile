@@ -3,7 +3,7 @@
 all: build test
 
 build: dist/setup-config
-	grep -E "$    " Memo.md | sed 's/$     //' > Memo.hs
+	grep -E "$    " examples/Memo.md | sed 's/$     //' > examples/Memo.hs
 	cabal build
 
 dist: test
@@ -25,4 +25,4 @@ doc: build
 	cabal haddock
 
 p: clean
-	permamake.sh $(shell find */ -name '*.hs') *.cabal Makefile *.md
+	permamake.sh $(shell find . -name '*.hs') *.cabal Makefile *.md

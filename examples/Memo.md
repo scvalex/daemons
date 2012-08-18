@@ -5,7 +5,8 @@ Memo
 
 Welcome to the first `daemons` tutorial, in which we walk through
 writing an in-memory key-value store with an RPC-like interface.  The
-code for this tutorial is [Memo.hs](https://github.com/scvalex/daemons/blob/master/Memo.hs).
+code for this tutorial is
+[Memo.hs](https://github.com/scvalex/daemons/blob/master/examples/Memo.hs).
 
 Concretely, we want a program such that:
 
@@ -165,6 +166,6 @@ To recap, we:
 
 This tutorial illustrates the basic concepts behind `daemons`, but
 hides a powerful feature: the interface is *streaming*.  See the
-[PMTQ](https://github.com/scvalex/daemons/blob/master/PMTQ.hs) (Poor
-Man's Task Queue) tutorial for an example use of the streaming
+[PMTQ](https://github.com/scvalex/daemons/blob/master/examples/PMTQ.hs)
+(Poor Man's Task Queue) tutorial for an example use of the streaming
 interface.
