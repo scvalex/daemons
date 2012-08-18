@@ -37,6 +37,22 @@ checks if a daemon named `addOne` is already running, and starts it if
 not, and `runClient` which connects to the daemon running on
 `localhost:5000`, passes it a number, and waits for the response.
 
+What would I use this for?
+--------------------------
+
+ - You can use the `runDetached` from `System.Posix.Daemon` to turn
+   your program into a daemon for Unix-like systems.  You'd want to do
+   this for practically every program that's meant to run as a server.
+
+ - You can use the functions from `Control.Pipe.C3`, `Socket`, and
+   `Serialize` to communicate with running Haskell program.  At the
+   simplest, you could query the program for its status, or instruct
+   it to shutdown cleanly.  A more complex use would be adding a full
+   REPL into a running Haskell process (think `erl -remsh`).
+
+ - You can use the helpers from `System.Daemon` to trivially do the
+   above.  Check out the following tutorials and examples for details.
+
 Tutorials and examples
 ----------------------
 
