@@ -1,3 +1,15 @@
+-- | An RPC-like interface for daemons is provided by
+-- 'ensureDaemonRunning' and 'runClient'.
+--
+-- A more versatile interface that lets you supply your own `Handler`
+-- is provided by `ensureDaemonWithHandlerRunning` and
+-- `runClientWithHandler`.  These are useful if, for instance, you
+-- need streaming requests or replies, or if you need to change your
+-- event handler at runtime.
+--
+-- The event handling loop is provided by `runInForeground`.  You may
+-- want to use this for debugging purposes or if you want to handle
+-- daemonization manually.
 module System.Daemon (
         -- * Daemons
         ensureDaemonRunning, ensureDaemonWithHandlerRunning,
@@ -9,7 +21,7 @@ module System.Daemon (
         DaemonOptions(..), PidFile(..), HostName, Port,
 
         -- * Helpers
-        bindPort, getSocket
+        runInForeground, bindPort, getSocket
     ) where
 
 import Control.Concurrent ( threadDelay )
@@ -94,15 +106,24 @@ ensureDaemonWithHandlerRunning name options handler = do
                     PidFile path -> path
     running <- isRunning pidfile
     when (not running) $ do
-        runDetached (Just pidfile) def $ do
-            CE.bracket
-                (bindPort (daemonPort options))
-                sClose
-                (\lsocket ->
-                     runSocketServer lsocket handler)
+        runDetached (Just pidfile) def
+            (runInForeground (daemonPort options) handler)
         when (printOnDaemonStarted options)
             (printf "Daemon started on port %d\n" (daemonPort options))
         threadDelay (1 * 1000 * 1000)  -- 1s delay
+
+-- | Start the given handler in the foreground.  It will listen and
+-- respond to events on the given port.
+--
+-- This is the function that 'ensureDaemonWithHandlerRunning' runs on
+-- the daemon thread.
+runInForeground :: Port -> Handler () -> IO ()
+runInForeground port handler = do
+    CE.bracket
+        (bindPort port)
+        sClose
+        (\lsocket ->
+             runSocketServer lsocket handler)
 
 -- | Send a command to the daemon running at the given network address
 -- and wait for a response.
