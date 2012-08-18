@@ -142,6 +142,7 @@ Now let's see it in action:
 
     {-
     % dist/build/memo/memo get apples
+    Daemon started on port 7856
     Just (Failed "not found")
     
     % dist/build/memo/memo put apples 23

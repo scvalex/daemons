@@ -28,6 +28,7 @@ import Network.Socket ( Socket, SockAddr(..), Family(..), SocketType(..)
 import System.Directory ( getHomeDirectory )
 import System.FilePath ( (</>), (<.>) )
 import System.Posix.Daemon ( runDetached, isRunning )
+import Text.Printf ( printf )
 
 type Port = Int
 type HostName = String
@@ -35,13 +36,15 @@ type HostName = String
 -- | The configuration options of a daemon.  See 'ensureDaemonRunning'
 -- for a description of each.
 data DaemonOptions = DaemonOptions
-    { daemonPort     :: Port
-    , daemonPidFile  :: PidFile
+    { daemonPort           :: Port
+    , daemonPidFile        :: PidFile
+    , printOnDaemonStarted :: Bool
     } deriving ( Show )
 
 instance Default DaemonOptions where
-    def = DaemonOptions { daemonPort    = 5000
-                        , daemonPidFile = InHome
+    def = DaemonOptions { daemonPort           = 5000
+                        , daemonPidFile        = InHome
+                        , printOnDaemonStarted = True
                         }
 
 -- | The location of the daemon's pidfile.
@@ -97,7 +100,9 @@ ensureDaemonWithHandlerRunning name options handler = do
                 sClose
                 (\lsocket ->
                      runSocketServer lsocket handler)
-        threadDelay 1000000
+        when (printOnDaemonStarted options)
+            (printf "Daemon started on port %d\n" (daemonPort options))
+        threadDelay (1 * 1000 * 1000)  -- 1s delay
 
 -- | Send a command to the daemon running at the given network address
 -- and wait for a response.

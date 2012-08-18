@@ -28,6 +28,7 @@ incremented number.
 Running it, we see:
 
     % addone 22
+    Daemon started on port 5000
     Just 23
     % addone 41
     Just 42
