@@ -68,6 +68,13 @@ Executable queue
   Main-Is:              examples/PMTQ.hs
   Ghc-options:          -Wall
 
+Executable name
+  Build-depends:        base >= 4 && < 5, bytestring, cereal,
+                        containers, data-default, directory, filepath,
+                        ghc-prim, pipes, transformers, network, unix
+  Main-Is:              examples/Name.hs
+  Ghc-options:          -Wall
+
 Test-suite daemon
   Hs-Source-Dirs:       Test, .
   Main-Is:              Daemon.hs
