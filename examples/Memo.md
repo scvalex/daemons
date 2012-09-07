@@ -166,6 +166,6 @@ To recap, we:
 
 This tutorial illustrates the basic concepts behind `daemons`, but
 hides a powerful feature: the interface is *streaming*.  See the
-[PMTQ](https://github.com/scvalex/daemons/blob/master/examples/PMTQ.hs)
+[Queue](https://github.com/scvalex/daemons/blob/master/examples/Queue.hs)
 (Poor Man's Task Queue) tutorial for an example use of the streaming
 interface.
