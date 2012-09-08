@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric, OverloadedStrings, MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Main where
 
@@ -37,6 +37,18 @@ instance Serialize Response
 
 type Registry = M.Map ByteString Port
 
+class VersionOf a b | a -> b where
+    toLatest :: a -> b
+    fromLatest :: b -> a
+
+instance VersionOf Command CommandV0 where
+    toLatest (CommandV0 v0) = v0
+    fromLatest v0 = CommandV0 v0
+
+instance VersionOf Response ResponseV0 where
+    toLatest (ResponseV0 v0) = v0
+    fromLatest v0 = ResponseV0 v0
+
 namePort :: Port
 namePort = 4370
 
@@ -49,9 +61,9 @@ handleCommand registryVar cmd = modifyMVar registryVar $ \registry -> return $
                             , Ok )
 
 wrapVersion :: (CommandV0 -> IO ResponseV0) -> Command -> IO Response
-wrapVersion f (CommandV0 v0) = do
-  rsp <- f v0
-  return (ResponseV0 rsp)
+wrapVersion f cmd = do
+  rsp <- f (toLatest cmd)
+  return (fromLatest rsp)
 
 main :: IO ()
 main = do
@@ -68,4 +80,4 @@ main = do
           runClient "localhost" namePort (CommandV0 (Register name portNum))
       _ ->
           error "invalid command"
-    print (res :: Maybe Response)
+    print (fmap toLatest (res :: Maybe Response))
