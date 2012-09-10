@@ -81,6 +81,10 @@ ensureDaemonRunning :: (Serialize a, Serialize b)
 ensureDaemonRunning name options executeCommand = do
     ensureDaemonWithHandlerRunning name options (commandReceiver executeCommand)
 
+-- FIXME Add set-up and tear-down action.  The reason the threaded
+-- runtime wouldn't work was because we were creating the mvar in a
+-- different thread!
+
 -- | Start a daemon running on the given port, using the given handler
 -- to respond to events.  If the daemon is already running, don't do
 -- anything.  Returns immediately.
@@ -165,9 +169,9 @@ bindPort port = do
         (socket AF_INET Stream defaultProtocol)
         sClose
         (\s -> do
+            -- FIXME See the examples at the end of Network.Socket.ByteString
             setSocketOption s ReuseAddr 1
-            bindSocket s (SockAddrInet (fromIntegral port)
-                                                  iNADDR_ANY)
+            bindSocket s (SockAddrInet (fromIntegral port) iNADDR_ANY)
             listen s maxListenQueue
             return s)
 
