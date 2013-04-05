@@ -33,6 +33,11 @@
 --
 -- > kill "diydns.pid"
 --
+-- To stop a job and wait for it to close (release its pidfile), 
+-- such as when restarting it), use killAndWait:
+--
+-- > killAndWait "diydns.pid" >> doSomething
+--
 -- As a side note, the code above is a script that the author uses as
 -- a sort of homebrew dynamic DNS: the remote address is a CGI script
 -- that records the IP addresses of all incoming requests in separate
@@ -46,7 +51,7 @@ module System.Posix.Daemon (
         isRunning,
 
         -- * Stopping
-        kill, brutalKill
+        kill, killAndWait, brutalKill
     ) where
 
 import Prelude hiding ( FilePath )
@@ -59,8 +64,8 @@ import System.IO ( SeekMode(..), hFlush, stdout )
 import System.Posix.Files ( stdFileMode )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
-                       , createFile
-                       , LockRequest (..), setLock, fdWrite, fdRead )
+                       , createFile, fdWrite, fdRead
+                       , LockRequest (..), setLock, waitToSetLock )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
 
@@ -178,6 +183,14 @@ isRunning pidFile = do
 -- gives the process a chance to close cleanly.
 kill :: FilePath -> IO ()
 kill = signalProcessByFilePath sigQUIT
+
+-- | Kill a process and wait for it to release its pidfile
+killAndWait :: FilePath -> IO ()
+killAndWait pidFile = do
+  signalProcessByFilePath sigQUIT pidFile
+  fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
+  waitToSetLock fd (WriteLock, AbsoluteSeek, 0, 0)
+  closeFd fd
 
 -- | Send 'sigKILL' to the process recorded in the pidfile.  This
 -- immediately kills the process.
