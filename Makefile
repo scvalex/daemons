@@ -5,6 +5,7 @@ all: build test
 .PHONY: all build dist install clean doc p test ghci
 
 build: dist/setup-config
+	grep -E "$    " examples/Memo.md | sed 's/$     //' > examples/Memo.hs
 	$(CABAL) build
 
 dist: build
