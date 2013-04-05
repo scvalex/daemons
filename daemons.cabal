@@ -29,7 +29,7 @@ Description:
 
 Extra-Source-Files:     Makefile
 
-Data-Files:             README.md, NEWS.md, LICENSE
+Data-Files:             README.md, NEWS.md, LICENSE, examples/Memo.md
 
 Source-repository head
   Type:                 git
