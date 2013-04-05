@@ -1,6 +1,6 @@
 CABAL := $(shell cabal-dev --version > /dev/null && echo cabal-dev || echo cabal)
 
-all: build
+all: build test
 
 .PHONY: all build dist install clean doc p test ghci
 
@@ -30,6 +30,7 @@ doc: build
 
 p:
 	permamake.sh $(shell find src/ -name '*.hs') \
+	             $(shell find test/ -name '*.hs') \
 	             *.cabal \
 	             Makefile
 
