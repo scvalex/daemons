@@ -94,6 +94,6 @@ Modules
 See also
 --------
 
- - `pipes` [The Pipes Tutorial](http://hackage.haskell.org/packages/archive/pipes/latest/doc/html/Control-Pipe-Tutorial.html)
+ - `pipes` [The Pipes Tutorial](http://hackage.haskell.org/packages/archive/pipes/3.2.0/doc/html/Control-Proxy-Tutorial.html)
 
  - `C3` [Wikipedia](https://en.wikipedia.org/wiki/Command,_control,_and_communications#Command.2C_control_and_communications)
