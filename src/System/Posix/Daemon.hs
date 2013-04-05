@@ -33,8 +33,8 @@
 --
 -- > kill "diydns.pid"
 --
--- To stop a job and wait for it to close (release its pidfile), 
--- such as when restarting it), use killAndWait:
+-- To stop a job and wait for it to close (and release its pidfile), use
+-- 'killAndWait':
 --
 -- > killAndWait "diydns.pid" >> doSomething
 --
@@ -187,10 +187,10 @@ kill = signalProcessByFilePath sigQUIT
 -- | Kill a process and wait for it to release its pidfile
 killAndWait :: FilePath -> IO ()
 killAndWait pidFile = do
-  signalProcessByFilePath sigQUIT pidFile
-  fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
-  waitToSetLock fd (WriteLock, AbsoluteSeek, 0, 0)
-  closeFd fd
+    signalProcessByFilePath sigQUIT pidFile
+    fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
+    waitToSetLock fd (WriteLock, AbsoluteSeek, 0, 0)
+    closeFd fd
 
 -- | Send 'sigKILL' to the process recorded in the pidfile.  This
 -- immediately kills the process.
