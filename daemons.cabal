@@ -38,7 +38,8 @@ Source-repository head
 Library
   Hs-Source-Dirs:       src
   Build-depends:        base >= 4 && < 5, bytestring, cereal,
-                        data-default, directory, filepath, network, pipes >= 3.1,
+                        data-default, directory, filepath, ghc-prim, network,
+                        pipes >= 3.1,
                         transformers, unix
   Ghc-options:          -Wall
   Exposed-modules:      Control.Pipe.C3,
@@ -50,25 +51,25 @@ Library
 
 Executable memo
   Build-depends:        base >= 4 && < 5, bytestring, cereal, containers,
-                        daemons, data-default
+                        daemons, data-default, ghc-prim
   Main-Is:              examples/Memo.hs
   Ghc-options:          -Wall
 
 Executable addone
-  Build-depends:        base >= 4 && < 5, daemons, data-default
+  Build-depends:        base >= 4 && < 5, daemons, data-default, ghc-prim
   Main-Is:              examples/AddOne.hs
   Ghc-options:          -Wall
 
 Executable queue
   Build-depends:        base >= 4 && < 5, bytestring, cereal, containers,
-                        daemons, data-default, network, pipes >= 3.1,
-                        transformers
+                        daemons, data-default, ghc-prim, network,
+                        pipes >= 3.1, transformers
   Main-Is:              examples/Queue.hs
   Ghc-options:          -Wall
 
 Executable name
   Build-depends:        base >= 4 && < 5, bytestring, cereal, containers,
-                        daemons, data-default
+                        daemons, data-default, ghc-prim
   Main-Is:              examples/Name.hs
   Ghc-options:          -Wall
 
@@ -76,6 +77,7 @@ Test-suite daemon
   Hs-Source-Dirs:       test
   Main-Is:              Daemon.hs
   Type:                 exitcode-stdio-1.0
-  Build-Depends:        base >= 4 && < 5, daemons, data-default, directory, HUnit,
-                        test-framework, test-framework-hunit, unix
+  Build-Depends:        base >= 4 && < 5, daemons, data-default, directory,
+                        ghc-prim, HUnit, test-framework, test-framework-hunit,
+                        unix
   Ghc-Options:          -Wall
