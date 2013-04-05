@@ -1,28 +1,37 @@
-.PHONY: all build dist install test clean doc p
+CABAL := $(shell cabal-dev --version > /dev/null && echo cabal-dev || echo cabal)
 
-all: build test
+all: build
+
+.PHONY: all build dist install clean doc p test ghci
 
 build: dist/setup-config
-	grep -E "$    " examples/Memo.md | sed 's/$     //' > examples/Memo.hs
-	cabal build
+	$(CABAL) build
 
-dist: test
+dist: build
 	cabal sdist
 
 install: build
 	cabal install
 
 test: build
-	cabal test
+	$(CABAL) test
 
 clean:
-	cabal clean
+	$(CABAL) clean
+	rm -rf cabal-dev/
 
 dist/setup-config: daemons.cabal
-	cabal configure --enable-tests
+# If you don't have all the necessary packages installed on the first
+# run, run `cabal-dev install`.
+	$(CABAL) configure --enable-tests || $(CABAL) install --enable-tests
 
 doc: build
-	cabal haddock
+	$(CABAL) haddock
 
-p: clean
-	permamake.sh $(shell find . -name '*.hs') *.cabal Makefile *.md
+p:
+	permamake.sh $(shell find src/ -name '*.hs') \
+	             *.cabal \
+	             Makefile
+
+ghci: build
+	cabal-dev ghci
