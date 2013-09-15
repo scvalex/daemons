@@ -16,12 +16,12 @@ import qualified Control.Exception as CE
 import Control.Monad ( forever, unless )
 import Control.Monad.IO.Class ( MonadIO(..) )
 import Control.Monad.Trans.Class ( lift )
-import Control.Pipe ( Consumer, Producer, await, yield )
 import Data.ByteString.Char8 ( ByteString )
 import qualified Data.ByteString.Char8 as B
 import Network.Socket ( Socket )
 import qualified Network.Socket as NS
 import Network.Socket.ByteString ( sendAll, recv )
+import Pipes ( Consumer, Producer, await, yield )
 
 -- | Stream data from the socket.
 socketReader :: (MonadIO m) => Socket -> Producer ByteString m ()
