@@ -6,7 +6,6 @@ import Control.Concurrent.Chan ( Chan, newChan, readChan, writeChan )
 import Control.Concurrent.MVar ( MVar, newMVar, modifyMVar )
 import Control.Monad ( forever )
 import Control.Monad.Trans.Class ( lift )
-import Control.Pipe ( runPipe, (<+<), await, yield )
 import Control.Pipe.Serialize ( serializer, deserializer )
 import Control.Pipe.Socket ( Handler )
 import Data.ByteString.Char8 ( ByteString )
@@ -18,6 +17,7 @@ import Data.String ( fromString )
 import qualified Data.Map as M
 import GHC.Generics
 import Network.Socket ( withSocketsDo )
+import Pipes ( runEffect, (<-<), await, yield )
 import System.Environment ( getArgs )
 import System.Daemon
 import System.IO ( hPutStrLn, stderr )
@@ -37,10 +37,8 @@ instance Serialize Response
 type Registry = M.Map ByteString (Chan ByteString)
 
 handleCommands :: MVar Registry -> Handler ()
-handleCommands registryVar reader writer = do
-    runPipe (writer <+< serializer
-             <+< commandExecuter
-             <+< deserializer <+< reader)
+handleCommands registryVar reader writer = runEffect $
+    writer <-< serializer <-< commandExecuter <-< deserializer <-< reader
   where
     commandExecuter = forever $ do
         comm <- await
@@ -86,10 +84,11 @@ main = withSocketsDo $ do
           res <- runClient "localhost" 7857 (Push key value)
           printResult res
       ["consume", key] -> do
-          runClientWithHandler "localhost" 7857 $ \reader writer -> do
-              runPipe (writer <+< serializer <+< yield (Consume key))
-              runPipe ((forever $ await >>= \res -> lift (printResult (Just res)))
-                       <+< deserializer <+< reader)
+          runClientWithHandler "localhost" 7857 $ \reader writer ->
+              runEffect $ do
+                  writer <-< serializer <-< yield (Consume key)
+                  (forever $ await >>= \res -> lift (printResult (Just res)))
+                       <-< deserializer <-< reader
       _ -> do
           error "invalid command"
   where

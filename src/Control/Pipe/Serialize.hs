@@ -24,7 +24,7 @@ module Control.Pipe.Serialize (
 import Data.ByteString.Char8 ( ByteString )
 import Data.Serialize ( Serialize, get, encode
                       , Result(..), runGetPartial )
-import Control.Pipe ( Pipe, await, yield )
+import Pipes ( Pipe, await, yield )
 import Control.Monad ( forever )
 
 -- | De-serialize data from strict 'ByteString's.  Uses @cereal@'s
