@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.2.0 (15 Sep 2013)
+-------------------
+
+ - update to work with pipes-4.0.0; thank you, @gabriel439
+
 0.1.2 (05 Apr 2013)
 -------------------
 
