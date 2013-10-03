@@ -37,10 +37,17 @@ Source-repository head
 
 Library
   Hs-Source-Dirs:       src
-  Build-depends:        base >= 4 && < 5, bytestring, cereal,
-                        data-default, directory, filepath, ghc-prim, network,
+  Build-depends:        base >= 4 && < 5,
+                        bytestring,
+                        cereal >= 0.4.0,
+                        data-default,
+                        directory,
+                        filepath,
+                        ghc-prim,
+                        network,
                         pipes >= 4.0.0,
-                        transformers, unix
+                        transformers,
+                        unix
   Ghc-options:          -Wall
   Exposed-modules:      Control.Pipe.C3,
                         Control.Pipe.Serialize,

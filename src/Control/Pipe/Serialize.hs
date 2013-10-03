@@ -35,8 +35,10 @@ deserializer = loop Nothing Nothing
     loop mk mbin = do
         bin <- maybe await return mbin
         case (maybe (runGetPartial get) id mk) bin of
-          Fail reason -> fail reason
-          Partial k   -> loop (Just k) Nothing
+          Fail reason _leftover ->
+              fail reason
+          Partial k ->
+              loop (Just k) Nothing
           Done c bin' -> do
               yield c
               loop Nothing (Just bin')
