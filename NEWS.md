@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.2.1 (03 Oct 2013)
+-------------------
+
+ - update to work with cereal-0.4.0; thank you, Henry Laxen
+
 0.2.0 (15 Sep 2013)
 -------------------
 
