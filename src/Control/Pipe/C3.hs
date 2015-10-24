@@ -1,6 +1,6 @@
 module Control.Pipe.C3 (
         -- * Pipes
-        commandSender, commandReceiver, commandRecieverByPipe
+        commandSender, commandReceiver, commandReceiverByPipe
     ) where
 
 import           Control.Monad             (forever)
@@ -30,7 +30,7 @@ commandSender command reader writer = runEffect $ do
 
 -- | Like commandRecieverByPipe but you supply a single handle function instead of a pipe
 commandReceiver :: (Serialize a, Serialize b) => (a -> IO b) -> Handler ()
-commandReceiver executeCommand = commandRecieverByPipe commandExecuter
+commandReceiver executeCommand = commandReceiverByPipe commandExecuter
   where
     commandExecuter = forever $ do
         comm <- await
@@ -38,7 +38,7 @@ commandReceiver executeCommand = commandRecieverByPipe commandExecuter
 
 -- | Wait for commands on the incoming pipe, handle them, and send the
 -- reponses over the outgoing pipe.
-commandRecieverByPipe :: (Serialize a, Serialize b) => Pipe a b IO () -> Handler ()
-commandRecieverByPipe executorPipe reader writer = runEffect $
+commandReceiverByPipe :: (Serialize a, Serialize b) => Pipe a b IO () -> Handler ()
+commandReceiverByPipe executorPipe reader writer = runEffect $
     writer <-< serializer <-< executorPipe <-< deserializer <-< reader
 
