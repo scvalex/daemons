@@ -1,6 +1,6 @@
 module Control.Pipe.C3 (
         -- * Pipes
-        commandSender, commandReceiver
+        commandSender, commandReceiver, commandRecieverByPipe
     ) where
 
 import           Control.Monad             (forever)
