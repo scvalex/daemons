@@ -1,6 +1,6 @@
 module Control.Pipe.C3 (
         -- * Pipes
-        commandSender, commandReceiver, commandReceiverByPipe
+        commandSender, commandSenderByPipe, commandReceiver, commandReceiverByPipe
     ) where
 
 import           Control.Monad             (forever)
@@ -8,25 +8,34 @@ import           Control.Monad.Trans.Class (lift)
 import           Control.Pipe.Serialize    (deserializer, serializer)
 import           Control.Pipe.Socket       (Handler)
 import           Data.Serialize            (Serialize)
-import           Pipes                     (Pipe, await, runEffect, yield,
-                                            (<-<))
+import           Pipes                     (Consumer, Pipe, await, runEffect,
+                                            yield, (<-<), (>~))
 
--- | Send a single command over the outgoing pipe and wait for a
--- response.  If the incoming pipe is closed before a response
--- arrives, returns @Nothing@.
+-- Like commandSenderByPipe but with only one possible response
 commandSender :: (Serialize a, Serialize b) => a -> Handler (Maybe b)
-commandSender command reader writer = runEffect $ do
+commandSender command = commandSenderByPipe command receiveResponse
+  where
+    receiveResponse = do
+        res <- await
+        return res
+
+-- | Send a single command over the outgoing pipe and consume the response with the given consumer
+-- If the incoming pipe is closed before a response
+-- arrives, returns @Nothing@.
+commandSenderByPipe :: (Serialize a, Serialize b) => a -> Consumer b IO b -> Handler (Maybe b)
+commandSenderByPipe command consumer reader writer = runEffect $ do
     writer <-< serializer <-< sendCommand
-    receiveResponse
+    (consumer >~ nothingFilter)
         <-< (deserializer >> return Nothing)
         <-< (reader >> return Nothing)
   where
     sendCommand = do
         yield command
 
-    receiveResponse = do
-        res <- await
-        return (Just res)
+    nothingFilter = do
+      resp <- await
+      return $ Just resp
+
 
 -- | Like commandRecieverByPipe but you supply a single handle function instead of a pipe
 commandReceiver :: (Serialize a, Serialize b) => (a -> IO b) -> Handler ()
