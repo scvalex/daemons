@@ -3,12 +3,13 @@ module Control.Pipe.C3 (
         commandSender, commandReceiver
     ) where
 
-import Control.Monad ( forever )
-import Control.Monad.Trans.Class ( lift )
-import Control.Pipe.Serialize ( serializer, deserializer )
-import Control.Pipe.Socket ( Handler )
-import Data.Serialize ( Serialize )
-import Pipes ( runEffect, await, yield, (<-<) )
+import           Control.Monad             (forever)
+import           Control.Monad.Trans.Class (lift)
+import           Control.Pipe.Serialize    (deserializer, serializer)
+import           Control.Pipe.Socket       (Handler)
+import           Data.Serialize            (Serialize)
+import           Pipes                     (Pipe, await, runEffect, yield,
+                                            (<-<))
 
 -- | Send a single command over the outgoing pipe and wait for a
 -- response.  If the incoming pipe is closed before a response
@@ -27,12 +28,17 @@ commandSender command reader writer = runEffect $ do
         res <- await
         return (Just res)
 
--- | Wait for commands on the incoming pipe, handle them, and send the
--- reponses over the outgoing pipe.
+-- | Like commandRecieverByPipe but you supply a single handle function instead of a pipe
 commandReceiver :: (Serialize a, Serialize b) => (a -> IO b) -> Handler ()
-commandReceiver executeCommand reader writer = runEffect $
-    writer <-< serializer <-< commandExecuter <-< deserializer <-< reader
+commandReceiver executeCommand = commandRecieverByPipe commandExecuter
   where
     commandExecuter = forever $ do
         comm <- await
         yield =<< lift (executeCommand comm)
+
+-- | Wait for commands on the incoming pipe, handle them, and send the
+-- reponses over the outgoing pipe.
+commandRecieverByPipe :: (Serialize a, Serialize b) => Pipe a b IO () -> Handler ()
+commandRecieverByPipe executorPipe reader writer = runEffect $
+    writer <-< serializer <-< executorPipe <-< deserializer <-< reader
+
