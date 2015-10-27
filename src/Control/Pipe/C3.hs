@@ -9,9 +9,11 @@ import           Control.Pipe.Serialize    (deserializer, serializer)
 import           Control.Pipe.Socket       (Handler)
 import           Data.Serialize            (Serialize)
 import           Pipes                     (Consumer, Pipe, await, runEffect,
-                                            yield, (<-<), (>~))
+                                            yield, (<-<))
 
--- Like commandSenderByPipe but with only one possible response
+-- | Send a single command over the outgoing pipe and wait for a
+-- response.  If the incoming pipe is closed before a response
+-- arrives, returns @Nothing@.
 commandSender :: (Serialize a, Serialize b) => a -> Handler (Maybe b)
 commandSender command = commandSenderByPipe command receiveResponse
   where
@@ -19,22 +21,13 @@ commandSender command = commandSenderByPipe command receiveResponse
         res <- await
         return res
 
--- | Send a single command over the outgoing pipe and consume the response with the given consumer
--- If the incoming pipe is closed before a response
--- arrives, returns @Nothing@.
-commandSenderByPipe :: (Serialize a, Serialize b) => a -> Consumer b IO b -> Handler (Maybe b)
-commandSenderByPipe command consumer reader writer = runEffect $ do
+commandSenderByPipe :: (Serialize a, Serialize b) => a -> Pipe b a IO b -> Handler (Maybe b)
+commandSenderByPipe command pipe reader writer = runEffect $ do
     writer <-< serializer <-< sendCommand
-    (consumer >~ nothingFilter)
-        <-< (deserializer >> return Nothing)
-        <-< (reader >> return Nothing)
+    (writer >> return Nothing) <-< (serializer >> return Nothing) <-< (Just <$> pipe) <-< (deserializer >> return Nothing) <-< (reader >> return Nothing)
   where
     sendCommand = do
         yield command
-
-    nothingFilter = do
-      resp <- await
-      return $ Just resp
 
 
 -- | Like commandRecieverByPipe but you supply a single handle function instead of a pipe
