@@ -21,11 +21,11 @@ module Control.Pipe.Serialize (
         serializer, deserializer
     ) where
 
-import Data.ByteString.Char8 ( ByteString )
-import Data.Serialize ( Serialize, get, encode
-                      , Result(..), runGetPartial )
-import Pipes ( Pipe, await, yield )
-import Control.Monad ( forever )
+import           Control.Monad         (forever)
+import           Data.ByteString.Char8 (ByteString)
+import           Data.Serialize        (Result (..), Serialize, encode, get,
+                                        runGetPartial)
+import           Pipes                 (Pipe, await, yield)
 
 -- | De-serialize data from strict 'ByteString's.  Uses @cereal@'s
 -- incremental 'Data.Serialize.Get' parser.
