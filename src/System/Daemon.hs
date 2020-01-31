@@ -34,9 +34,9 @@ import Data.Serialize ( Serialize )
 import Data.String ( IsString(..) )
 import Network.Socket ( Socket, SockAddr(..), Family(..), SocketType(..)
                       , SocketOption(..), setSocketOption
-                      , socket, sClose, connect, bindSocket, listen
+                      , socket, close, connect, bind, listen
                       , AddrInfo(..), getAddrInfo, addrAddress, defaultHints
-                      , defaultProtocol, iNADDR_ANY, maxListenQueue )
+                      , defaultProtocol, tupleToHostAddress, maxListenQueue )
 import System.Directory ( getHomeDirectory )
 import System.FilePath ( (</>), (<.>) )
 import System.Posix.Daemon ( runDetached, isRunning )
@@ -125,7 +125,7 @@ runInForeground :: Port -> Handler () -> IO ()
 runInForeground port handler = do
     CE.bracket
         (bindPort port)
-        sClose
+        close
         (\lsocket ->
              runSocketServer lsocket handler)
 
@@ -159,7 +159,7 @@ runClientWithHandler :: HostName   -- ^ hostname
 runClientWithHandler hostname port handler = do
     CE.bracket
         (getSocket hostname port)
-        sClose
+        close
         (\s -> runSocketClient s handler)
 
 -- | Create a socket and bind it to the given port.
@@ -167,11 +167,11 @@ bindPort :: Port -> IO Socket
 bindPort port = do
     CE.bracketOnError
         (socket AF_INET Stream defaultProtocol)
-        sClose
+        close
         (\s -> do
             -- FIXME See the examples at the end of Network.Socket.ByteString
             setSocketOption s ReuseAddr 1
-            bindSocket s (SockAddrInet (fromIntegral port) iNADDR_ANY)
+            bind s (SockAddrInet (fromIntegral port) (tupleToHostAddress (0, 0, 0, 0)))
             listen s maxListenQueue
             return s)
 
@@ -183,7 +183,7 @@ getSocket hostname port = do
                              (Just $ show port)
     CE.bracketOnError
         (socket AF_INET Stream defaultProtocol)
-        sClose
+        close
         (\s -> do
              connect s (addrAddress $ head addrInfos)
              return s)

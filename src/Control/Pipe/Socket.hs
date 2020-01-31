@@ -70,7 +70,7 @@ runSocketServer lsocket handler = liftIO $ forever $ do
     (socket, _addr) <- NS.accept lsocket
     _ <- forkIO $ CE.finally
                       (handler (socketReader socket) (socketWriter socket))
-                      (NS.sClose socket)
+                      (NS.close socket)
     return ()
 
 -- | Run 'Handler' on the given socket.
