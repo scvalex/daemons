@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.3.0 (03 Feb 2020)
+-------------------
+
+ - update to work with the new network library; thank you, @guibou
+
 0.2.1 (03 Oct 2013)
 -------------------
 
