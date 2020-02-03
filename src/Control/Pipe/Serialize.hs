@@ -26,10 +26,11 @@ import Data.Serialize ( Serialize, get, encode
                       , Result(..), runGetPartial )
 import Pipes ( Pipe, await, yield )
 import Control.Monad ( forever )
+import Control.Monad.Fail ( MonadFail )
 
 -- | De-serialize data from strict 'ByteString's.  Uses @cereal@'s
 -- incremental 'Data.Serialize.Get' parser.
-deserializer :: (Serialize a, Monad m) => Pipe ByteString a m ()
+deserializer :: (Serialize a, Monad m, MonadFail m) => Pipe ByteString a m ()
 deserializer = loop Nothing Nothing
   where
     loop mk mbin = do
