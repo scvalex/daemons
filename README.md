@@ -7,7 +7,7 @@ Example
 -------
 
 Here's
-[AddOne](https://github.com/scvalex/daemons/blob/master/AddOne.hs), a
+[AddOne](https://github.com/scvalex/daemons/blob/master/examples/AddOne.hs), a
 simple daemon that waits for a number and responds with the
 incremented number.
 
