@@ -67,7 +67,7 @@ import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , createFile, fdWrite, fdRead
                        , LockRequest (..), setLock, waitToSetLock )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
-import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
+import System.Posix.Signals ( Signal, signalProcess, sigKILL, sigTERM )
 
 -- | Where should the output (and input) of a daemon be redirected to?
 -- (we can't just leave it to the current terminal, because it may be
@@ -110,7 +110,7 @@ runDetached maybePidFile redirection program = do
     ignore $ forkProcess $ do
         -- create a new session and make this process its leader; see
         -- setsid(2)
-        ignore $ createSession
+        ignore createSession
         -- fork second child
         ignore $ forkProcess $ do
             -- create the pidfile
@@ -174,20 +174,18 @@ isRunning pidFile = do
             Nothing -> do
                 pid' <- getProcessID
                 return (read pid == pid')
-            Just _ -> do
-                return True
-      else do
-          return False
+            Just _ -> return True
+      else return False
 
--- | Send 'sigQUIT' to the process recorded in the pidfile.  This
+-- | Send 'sigTERM' to the process recorded in the pidfile.  This
 -- gives the process a chance to close cleanly.
 kill :: FilePath -> IO ()
-kill = signalProcessByFilePath sigQUIT
+kill = signalProcessByFilePath sigTERM
 
 -- | Kill a process and wait for it to release its pidfile
 killAndWait :: FilePath -> IO ()
 killAndWait pidFile = do
-    signalProcessByFilePath sigQUIT pidFile
+    signalProcessByFilePath sigTERM pidFile
     fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
     waitToSetLock fd (WriteLock, AbsoluteSeek, 0, 0)
     closeFd fd
