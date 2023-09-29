@@ -1,6 +1,6 @@
 Name:           daemons
 Version:        0.4.0
-Cabal-Version:  >= 1.8
+Cabal-Version:  1.24
 License:        GPL-3
 License-File:   LICENSE
 Stability:      experimental
@@ -55,17 +55,20 @@ Library
                         System.Daemon,
                         System.Posix.Daemon
   Other-modules:
+  Default-language:     Haskell2010
 
 Executable memo
   Build-depends:        base >= 4.18 && < 5, bytestring, cereal, containers,
                         daemons, data-default, ghc-prim
   Main-Is:              examples/Memo.hs
   Ghc-options:          -Wall
+  Default-language:     Haskell2010
 
 Executable addone
   Build-depends:        base >= 4.18 && < 5, daemons, data-default, ghc-prim
   Main-Is:              examples/AddOne.hs
   Ghc-options:          -Wall
+  Default-language:     Haskell2010
 
 Executable queue
   Build-depends:        base >= 4.18 && < 5, bytestring, cereal, containers,
@@ -73,12 +76,14 @@ Executable queue
                         pipes >= 4.0.0, transformers
   Main-Is:              examples/Queue.hs
   Ghc-options:          -Wall
+  Default-language:     Haskell2010
 
 Executable name
   Build-depends:        base >= 4.18 && < 5, bytestring, cereal, containers,
                         daemons, data-default, ghc-prim
   Main-Is:              examples/Name.hs
   Ghc-options:          -Wall
+  Default-language:     Haskell2010
 
 Test-suite daemon
   Hs-Source-Dirs:       test
@@ -88,3 +93,4 @@ Test-suite daemon
                         ghc-prim, HUnit, test-framework, test-framework-hunit,
                         unix
   Ghc-Options:          -Wall
+  Default-language:     Haskell2010
