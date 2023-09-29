@@ -19,7 +19,7 @@
             cabal-install
             tokei
 
-            haskell.compiler.ghc94
+            haskell.compiler.ghc96
             haskellPackages.pipes
           ];
           GIT_EXTERNAL_DIFF = "${difftastic}/bin/difft";
