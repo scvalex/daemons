@@ -57,6 +57,7 @@ module System.Posix.Daemon (
 import Prelude hiding ( FilePath )
 
 import Control.Monad ( when )
+import Data.ByteString.Char8 ( unpack )
 import Data.Default ( Default(..) )
 import System.Directory ( doesFileExist )
 import System.FilePath ( FilePath )
@@ -64,8 +65,9 @@ import System.IO ( SeekMode(..), hFlush, stdout )
 import System.Posix.Files ( stdFileMode )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
-                       , createFile, fdWrite, fdRead
+                       , createFile, fdWrite
                        , LockRequest (..), setLock, waitToSetLock, creat )
+import System.Posix.IO.ByteString ( fdRead )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
 
@@ -168,7 +170,7 @@ isRunning pidFile = do
           fd <- openFd pidFile ReadWrite defaultFileFlags
           -- is there an *incompatible* lock on the pidfile?
           ml <- getLock fd (WriteLock, AbsoluteSeek, 0, 0)
-          (pid, _) <- fdRead fd 100
+          pid <- fdRead fd 100 >>= \x -> return (unpack x)
           closeFd fd
           case ml of
             Nothing -> do

@@ -6,7 +6,6 @@ import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Data.Default
-import Data.Monoid
 import System.Directory
 import System.Posix.Daemon
 import System.Posix.Process

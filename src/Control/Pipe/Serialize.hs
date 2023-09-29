@@ -26,7 +26,6 @@ import Data.Serialize ( Serialize, get, encode
                       , Result(..), runGetPartial )
 import Pipes ( Pipe, await, yield )
 import Control.Monad ( forever )
-import Control.Monad.Fail ( MonadFail )
 
 -- | De-serialize data from strict 'ByteString's.  Uses @cereal@'s
 -- incremental 'Data.Serialize.Get' parser.
