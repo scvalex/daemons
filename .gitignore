@@ -1,6 +1,8 @@
 dist/
 dist-newstyle/
 cabal-dev/
+.direnv/
 cabal.project.local
+cabal.project.local~
 .stack-work/
 Setup.hs
