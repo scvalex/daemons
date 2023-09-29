@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.4.0 (29 Sep 2023)
+-------------------
+
+  - update to work with ghc-9.6; thank you, @tfausak
+  - bump min base version to 4.18
+
 0.3.0 (03 Feb 2020)
 -------------------
 
