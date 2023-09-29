@@ -65,7 +65,7 @@ import System.Posix.Files ( stdFileMode )
 import System.Posix.IO ( openFd, OpenMode(..), defaultFileFlags, closeFd
                        , dupTo, stdInput, stdOutput, stdError, getLock
                        , createFile, fdWrite, fdRead
-                       , LockRequest (..), setLock, waitToSetLock )
+                       , LockRequest (..), setLock, waitToSetLock, creat )
 import System.Posix.Process ( getProcessID, forkProcess, createSession )
 import System.Posix.Signals ( Signal, signalProcess, sigQUIT, sigKILL )
 
@@ -125,14 +125,14 @@ runDetached maybePidFile redirection program = do
     -- Remap the standard channels based on the @redirection@
     -- parameter.
     remapFds = do
-        devnull <- openFd "/dev/null" ReadOnly Nothing defaultFileFlags
+        devnull <- openFd "/dev/null" ReadOnly defaultFileFlags
         ignore (dupTo devnull stdInput)
         closeFd devnull
 
         let file = case redirection of
                      DevNull         -> "/dev/null"
                      ToFile filepath -> filepath
-        fd <- openFd file ReadWrite (Just stdFileMode) defaultFileFlags
+        fd <- openFd file ReadWrite defaultFileFlags { creat = Just stdFileMode }
         hFlush stdout
         mapM_ (dupTo fd) [stdOutput, stdError]
         closeFd fd
@@ -165,7 +165,7 @@ isRunning pidFile = do
     dfe <- doesFileExist pidFile
     if dfe
       then do
-          fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
+          fd <- openFd pidFile ReadWrite defaultFileFlags
           -- is there an *incompatible* lock on the pidfile?
           ml <- getLock fd (WriteLock, AbsoluteSeek, 0, 0)
           (pid, _) <- fdRead fd 100
@@ -188,7 +188,7 @@ kill = signalProcessByFilePath sigQUIT
 killAndWait :: FilePath -> IO ()
 killAndWait pidFile = do
     signalProcessByFilePath sigQUIT pidFile
-    fd <- openFd pidFile ReadWrite Nothing defaultFileFlags
+    fd <- openFd pidFile ReadWrite defaultFileFlags
     waitToSetLock fd (WriteLock, AbsoluteSeek, 0, 0)
     closeFd fd
 
